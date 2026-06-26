@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+:root {
+  --ivory: #fffff0;
+  --champagne: #f7e7ce;
+  --graphite: #343434;
+  --rose-gold: #b76e79;
+  --soft-beige: #f6efe4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ivory);
+  color: var(--graphite);
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: "Bodoni Moda", serif;
+}
+
+button {
+  cursor: pointer;
+}
+
+.glass-panel {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.luxury-transition {
+  transition: all 0.35s ease;
+}
+
+.section-padding {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-padding {
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
