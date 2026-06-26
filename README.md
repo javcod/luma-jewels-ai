@@ -10,7 +10,7 @@ Demo: https://luma-jewel-ai.netlify.app/
 
 ## GitHub Repository
 
-Repository: [Add your GitHub repository link here]
+Repository: https://github.com/javcod/luma-jewels-ai
 
 ## Key Features
 
