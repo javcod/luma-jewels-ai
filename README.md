@@ -6,7 +6,7 @@ The platform includes an elegant jewellery homepage, animated product cards, AI-
 
 ## Live Demo
 
-Demo: [Add your live Netlify/Vercel link here]
+Demo: https://luma-jewel-ai.netlify.app/
 
 ## GitHub Repository
 
