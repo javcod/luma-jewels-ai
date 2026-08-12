@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import HowLumaWorks from "./components/HowLumaWorks";
 import ProductModal from "./components/ProductModal";
 import WishlistToast from "./components/WishlistToast";
@@ -13,13 +13,45 @@ import { Testimonials } from "./components/sections/Testimonials";
 import { Footer } from "./components/sections/Footer";
 import { ProductCard } from "./components/ui/ProductCard";
 import { SmoothScroll } from "./components/ui/SmoothScroll";
+import { LumaConcierge } from "./components/Concierge/LumaConcierge";
 
-import { products } from "./data/products";
+import { getProducts } from "./lib/api";
 
 function App() {
+  const [products, setProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [productsError, setProductsError] = useState(null);
+
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [wishlistMessage, setWishlistMessage] = useState("");
+  const [isConciergeOpen, setIsConciergeOpen] = useState(false);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    setIsLoadingProducts(true);
+    setProductsError(null);
+
+    getProducts()
+      .then((data) => {
+        if (isCancelled) return;
+        setProducts(data?.items ?? []);
+      })
+      .catch(() => {
+        if (isCancelled) return;
+        // User-friendly only — never surface the raw ApiError/status/backend detail here.
+        setProductsError("We couldn't load the collection right now. Please try again shortly.");
+      })
+      .finally(() => {
+        if (isCancelled) return;
+        setIsLoadingProducts(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   const handleProductClick = (product) => {
     setSelectedProduct(product);
@@ -39,10 +71,14 @@ function App() {
     }, 2200);
   };
 
+  const handleToggleConcierge = () => {
+    setIsConciergeOpen((prev) => !prev);
+  };
+
   return (
     <SmoothScroll>
       <div className="relative min-h-screen bg-white">
-        <Navbar />
+        <Navbar onToggleConcierge={handleToggleConcierge} />
 
         <main>
           <Hero />
@@ -67,17 +103,31 @@ function App() {
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-16">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onClick={() => handleProductClick(product)}
-                    onView={() => handleProductClick(product)}
-                    onWishlist={() => handleWishlist(product)}
-                  />
-                ))}
-              </div>
+              {isLoadingProducts && (
+                <p className="text-center text-[11px] uppercase tracking-[0.3em] text-graphite/40">
+                  Loading the collection…
+                </p>
+              )}
+
+              {!isLoadingProducts && productsError && (
+                <p className="text-center text-[11px] uppercase tracking-[0.3em] text-graphite/40">
+                  {productsError}
+                </p>
+              )}
+
+              {!isLoadingProducts && !productsError && (
+                <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3 lg:gap-16">
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      onClick={() => handleProductClick(product)}
+                      onView={() => handleProductClick(product)}
+                      onWishlist={() => handleWishlist(product)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -100,6 +150,12 @@ function App() {
         />
 
         <WishlistToast message={wishlistMessage} />
+
+        <LumaConcierge
+          isOpen={isConciergeOpen}
+          onClose={handleToggleConcierge}
+          onProductClick={handleProductClick}
+        />
       </div>
     </SmoothScroll>
   );

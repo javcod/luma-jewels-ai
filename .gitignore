@@ -3,3 +3,11 @@ dist
 .env
 .env.local
 .DS_Store
+
+# Python backend (see backend/.gitignore for the full set)
+backend/__pycache__/
+backend/**/__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+backend/.venv/

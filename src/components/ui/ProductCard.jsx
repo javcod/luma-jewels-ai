@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { Button } from "../ui/Button";
 
-const ProductCard = ({ product, onClick, onWishlist }) => {
+const ProductCard = ({ product, onClick, onWishlist, compact = false }) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const handleWishlistClick = (e) => {
@@ -11,6 +11,44 @@ const ProductCard = ({ product, onClick, onWishlist }) => {
     setIsWishlisted(true);
     onWishlist?.(product);
   };
+
+  // Compact variant: a small horizontal row, used for recommendations
+  // rendered inside the narrow Luma Concierge panel (Phase 5B/5C). The
+  // default (non-compact) card below — used by the main product grid — is
+  // unchanged. Same component, same click-to-open-ProductModal contract;
+  // just a smaller layout for a space-constrained context. A real <button>
+  // (not a clickable div) so it's keyboard-focusable and Enter/Space-
+  // activatable without extra handlers.
+  if (compact) {
+    return (
+      <motion.button
+        type="button"
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        onClick={onClick}
+        className="group flex w-full items-center gap-3 border border-graphite/10 bg-white p-3 text-left transition-all duration-300 hover:border-champagne/40 hover:bg-champagne/5 focus-visible:border-champagne/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-champagne/50"
+      >
+        <div className="h-14 w-14 shrink-0 overflow-hidden bg-champagne/5">
+          <img
+            src={product.image}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[9px] font-bold uppercase tracking-[0.2em] text-graphite/30">
+            {product.category}
+          </p>
+          <h4 className="truncate text-sm font-medium tracking-tight text-graphite">{product.name}</h4>
+          <p className="mt-0.5 font-serif text-sm italic text-champagne-800">
+            {product.price_display || product.price}
+          </p>
+        </div>
+      </motion.button>
+    );
+  }
 
   return (
     <motion.div
@@ -32,17 +70,20 @@ const ProductCard = ({ product, onClick, onWishlist }) => {
           className="h-full w-full object-cover transition-transform duration-[2.5s] ease-out group-hover:scale-110"
         />
 
-        {/* Match Badge */}
-        <div className="absolute right-5 top-5 z-10">
-          <div className="flex h-14 w-14 -rotate-12 transform flex-col items-center justify-center rounded-full border border-dashed border-champagne/60 bg-white/30 shadow-2xl ring-4 ring-white/20 backdrop-blur-md transition-all duration-700 group-hover:rotate-0 group-hover:scale-110">
-            <span className="text-[8px] font-bold uppercase leading-none tracking-tighter text-graphite opacity-40">
-              Match
-            </span>
-            <span className="mt-1 font-serif text-[16px] italic leading-none text-graphite">
-              {product.match}
-            </span>
+        {/* Match Badge — only shown when a real match value exists (backend
+            Product objects never fabricate one; see backend/README.md) */}
+        {product.match && (
+          <div className="absolute right-5 top-5 z-10">
+            <div className="flex h-14 w-14 -rotate-12 transform flex-col items-center justify-center rounded-full border border-dashed border-champagne/60 bg-white/30 shadow-2xl ring-4 ring-white/20 backdrop-blur-md transition-all duration-700 group-hover:rotate-0 group-hover:scale-110">
+              <span className="text-[8px] font-bold uppercase leading-none tracking-tighter text-graphite opacity-40">
+                Match
+              </span>
+              <span className="mt-1 font-serif text-[16px] italic leading-none text-graphite">
+                {product.match}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Hover Actions */}
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-5 bg-black/10 opacity-0 backdrop-blur-[2px] transition-all duration-700 group-hover:opacity-100">
@@ -91,7 +132,7 @@ const ProductCard = ({ product, onClick, onWishlist }) => {
           </div>
 
           <p className="shrink-0 font-serif text-xl italic text-champagne-800">
-            {product.price}
+            {product.price_display || product.price}
           </p>
         </div>
 
