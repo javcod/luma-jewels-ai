@@ -1,0 +1,17 @@
+# LumaJewel AI backend dependencies.
+# Do NOT add langgraph, langchain, database drivers, vector store clients,
+# redis, or auth libraries here — those remain out of scope.
+
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# LLM provider (Phase 4) — official Google GenAI SDK, used only by
+# app/llm/gemini_provider.py. LLM_PROVIDER=fake (the default) never
+# imports this package.
+google-genai==1.75.0
+
+# Testing
+pytest==8.3.4
+httpx==0.28.1

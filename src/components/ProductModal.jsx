@@ -53,9 +53,14 @@ export default function ProductModal({ product, isOpen, onClose, onWishlist }) {
                 </p>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <span className="rounded-full border border-amber-200/30 bg-amber-200/10 px-5 py-2 text-sm text-amber-100">
-                    {product.match || product.matchScore || 96}% AI Match
-                  </span>
+                  {/* Only shown when a real match value exists — never
+                      fabricated for backend Product objects (see
+                      backend/README.md, "Deliberately excluded: match/reason"). */}
+                  {(product.match || product.matchScore) && (
+                    <span className="rounded-full border border-amber-200/30 bg-amber-200/10 px-5 py-2 text-sm text-amber-100">
+                      {product.match || product.matchScore}% AI Match
+                    </span>
+                  )}
 
                   <span className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm text-white/70">
                     {product.metal || "Premium Finish"}
@@ -63,7 +68,7 @@ export default function ProductModal({ product, isOpen, onClose, onWishlist }) {
                 </div>
 
                 <p className="mt-6 text-3xl font-semibold text-amber-100">
-                  {product.price}
+                  {product.price_display || product.price}
                 </p>
 
                 <p className="mt-6 leading-8 text-white/65">

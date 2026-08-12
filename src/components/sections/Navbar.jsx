@@ -4,7 +4,7 @@ import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 
-const Navbar = () => {
+const Navbar = ({ onToggleConcierge }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -75,7 +75,12 @@ const Navbar = () => {
             </button>
           </div>
           
-          <Button variant="primary" size="sm" className="hidden sm:flex rounded-none shadow-luxury">
+          <Button
+            variant="primary"
+            size="sm"
+            className="hidden sm:flex rounded-none shadow-luxury"
+            onClick={onToggleConcierge}
+          >
             Find My Style
           </Button>
 
@@ -115,7 +120,15 @@ const Navbar = () => {
                 <Heart size={22} strokeWidth={1} />
                 <ShoppingBag size={22} strokeWidth={1} />
               </div>
-              <Button variant="primary" size="lg" className="w-full">
+              <Button
+                variant="primary"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  onToggleConcierge?.();
+                }}
+              >
                 Find My Style
               </Button>
             </div>

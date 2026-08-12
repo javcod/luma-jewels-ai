@@ -1,105 +1,99 @@
-# LumaJewels AI – AI-Powered Jewellery Shopping Experience
+# LumaJewel AI
 
-LumaJewels AI is a luxury jewellery shopping prototype that demonstrates how AI-powered personalization can improve product discovery, style matching, and premium e-commerce experiences.
+A luxury jewelry storefront (React + Vite) with **Luma Concierge** — a
+tool-using AI shopping assistant (Python/FastAPI backend, real Gemini or a
+deterministic fake provider) that answers jewelry questions by actually
+searching the product catalog, never by inventing an answer.
 
-The platform includes an elegant jewellery homepage, animated product cards, AI-style recommendations, personalized match scores, wishlist interactions, product detail modal, and an interactive “Find My Style” quiz that generates a custom jewellery style profile.
+```
+Browser
+  ↓
+React/Vite frontend  ──deploys to──►  Vercel
+  ↓  POST /concierge/chat, GET /products
+FastAPI backend      ──deploys to──►  Render
+  ↓
+Agent orchestrator → product tools → canonical catalog
+  ↓
+Gemini API (backend-only — never exposed to the browser)
+```
 
-## Live Demo
+Full backend architecture, agent design, and API reference: [backend/README.md](backend/README.md).
 
-Demo: https://luma-jewel-ai.netlify.app/
+## Local development
 
-## GitHub Repository
-
-Repository: https://github.com/javcod/luma-jewels-ai
-
-## Key Features
-
-* Luxury jewellery landing page with premium editorial design
-* AI recommendation section for personalized product discovery
-* Product cards with smooth hover animations
-* Personalized jewellery match score
-* Wishlist interaction with instant toast feedback
-* Product detail modal with AI recommendation reason
-* “Find My Style” quiz for style-based jewellery matching
-* AI-generated style aura, best match, and match percentage
-* Fully responsive design for desktop and mobile
-* Smooth animations using Framer Motion
-
-## AI Personalization Concept
-
-LumaJewels AI uses user preference signals such as occasion, style, metal tone, and budget to create a personalized jewellery profile.
-
-The system then simulates an AI recommendation flow by:
-
-1. Collecting user style preferences
-2. Mapping preferences to a luxury jewellery profile
-3. Generating a personalized style aura
-4. Assigning a match score
-5. Recommending the best jewellery piece
-6. Explaining why the product matches the user’s taste
-
-This creates a more engaging and personalized shopping experience compared to a normal static jewellery website.
-
-## Tech Stack
-
-* React
-* Vite
-* Tailwind CSS
-* Framer Motion
-* Lucide React
-* Netlify / Vercel Deployment
-
-## Sections
-
-* Hero Section
-* Collections
-* AI Recommendation
-* How Luma AI Works
-* Neural Matches
-* Product Detail Modal
-* Style Quiz
-* Wishlist Interaction
-* Trust Section
-* Testimonials
-* Footer
-
-## Project Purpose
-
-This project was built as a frontend AI-commerce prototype inspired by the future of personalized luxury shopping. It focuses on user experience, product personalization, premium UI design, and AI-assisted recommendation flow.
-
-## Future Improvements
-
-* Real backend-based recommendation engine
-* User authentication
-* Persistent wishlist storage
-* Product search and filters
-* Cart and checkout flow
-* Admin dashboard for product management
-* Integration with real AI APIs for dynamic recommendations
-
-## Installation
-
+**Frontend:**
 ```bash
-git clone https://github.com/javcod/luma-jewels-ai.git
-cd luma-jewels-ai
 npm install
 npm run dev
 ```
+Runs at `http://localhost:5173`. Optionally copy `.env.example` to
+`.env.local` to point at a non-default backend URL.
 
-## Build
-
+**Backend:** see [backend/README.md](backend/README.md) for the full setup
+(virtualenv, dependencies, `.env`). Quick version:
 ```bash
-npm run build
+cd backend
+python -m venv .venv && source .venv/Scripts/activate  # or bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload --port 8000
 ```
+Defaults to the deterministic `FakeLLMProvider` — no API key needed to run
+the full app locally.
 
-## Preview Production Build
+## Deployment
 
-```bash
-npm run preview
-```
+The frontend and backend deploy independently — Vercel never talks to
+Gemini, and Render never serves frontend files.
 
-## Author
+### 1. Push to GitHub
+Commit and push this repository to a GitHub repo (not performed as part of
+any automated phase — this is a manual step you run yourself).
 
-Built by Prabhuji Mishra
-B.Tech CSE Student | AI Agent & Automation Enthusiast
-GitHub: https://github.com/javcod
+### 2. Backend → Render
+1. In Render, create a new **Blueprint** from your GitHub repo — it will
+   pick up `render.yaml` at the repo root automatically and configure the
+   `lumajewel-backend` web service (root directory `backend/`, Python
+   runtime, `pip install -r requirements.txt`, `uvicorn` start command,
+   `/health` health check).
+2. When prompted, set the environment variables marked `sync: false` in
+   `render.yaml`:
+   - `FRONTEND_ORIGIN` — leave a placeholder for now (e.g.
+     `http://localhost:5173`); you'll update it after step 3 once you know
+     your real Vercel URL.
+   - `LLM_API_KEY` — your real Gemini API key. **Only set this here, in
+     Render — never in Vercel or any frontend file.**
+3. Deploy. Confirm `https://<your-service>.onrender.com/health` returns
+   `{"status": "ok", ...}`.
+
+### 3. Frontend → Vercel
+1. Import the same GitHub repo into Vercel. It auto-detects the Vite
+   project — no `vercel.json` needed (this app is a single page with no
+   client-side routing to configure rewrites for).
+2. Set one project environment variable:
+   - `VITE_API_BASE_URL` = your Render backend URL from step 2
+     (e.g. `https://lumajewel-backend.onrender.com`).
+3. Deploy.
+
+### 4. Close the loop
+Go back to Render and update `FRONTEND_ORIGIN` to your real Vercel URL
+(comma-separate it with `http://localhost:5173` if you still want local
+dev to keep working against the deployed backend), then redeploy the
+backend so the new CORS origin takes effect.
+
+### 5. Final live smoke test
+Open the deployed Vercel URL, confirm the product grid loads (proves
+Vercel → Render → `/products` works), open Luma Concierge and send a
+message (proves the full agent loop works against the deployed backend).
+
+## Environment variables
+
+| Var | Where it's set | Purpose |
+|---|---|---|
+| `VITE_API_BASE_URL` | Vercel (frontend) | Backend base URL. See `.env.example`. |
+| `FRONTEND_ORIGIN` | Render (backend) | Allowed CORS origin(s), comma-separated. |
+| `LLM_PROVIDER` | Render (backend) | `fake` or `gemini`. |
+| `LLM_MODEL` | Render (backend) | Gemini model id. |
+| `LLM_API_KEY` | Render (backend) **only** | Real Gemini API key — never in frontend/Vercel. |
+
+Full details, defaults, and rationale: [backend/.env.example](backend/.env.example) and [backend/README.md](backend/README.md).
