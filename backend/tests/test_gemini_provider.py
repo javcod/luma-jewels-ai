@@ -176,6 +176,63 @@ def test_unexpected_exception_is_wrapped_as_provider_error():
         provider.generate([ChatMessage(role="user", content="x")], [SEARCH_TOOL])
 
 
+def test_client_error_is_not_retried(monkeypatch):
+    # A 4xx (e.g. bad API key) is never retryable — retrying would just
+    # return the same error, so it must fail on the very first attempt.
+    sleep_calls = []
+    monkeypatch.setattr("app.llm.gemini_provider.time.sleep", lambda s: sleep_calls.append(s))
+
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = errors.ClientError(code=401, response_json={"error": "bad key"})
+    provider = GeminiProvider(api_key=None, model="gemini-2.5-flash", client=mock_client)
+
+    with pytest.raises(GeminiProviderError, match="Gemini API error"):
+        provider.generate([ChatMessage(role="user", content="x")], [SEARCH_TOOL])
+
+    assert mock_client.models.generate_content.call_count == 1
+    assert sleep_calls == []
+
+
+def test_server_error_is_retried_and_succeeds_on_a_later_attempt(monkeypatch):
+    # Reproduces the real production/local failure: Gemini intermittently
+    # returns 503 "high demand" and the exact same request succeeds moments
+    # later. A transient ServerError should be retried, not surfaced to the
+    # user as a failure, on the first hiccup.
+    sleep_calls = []
+    monkeypatch.setattr("app.llm.gemini_provider.time.sleep", lambda s: sleep_calls.append(s))
+
+    server_error = errors.ServerError(
+        503, {"error": {"code": 503, "message": "high demand", "status": "UNAVAILABLE"}}
+    )
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = [server_error, _mock_response(text="Here are some rings.")]
+    provider = GeminiProvider(api_key=None, model="gemini-2.5-flash", client=mock_client)
+
+    response = provider.generate([ChatMessage(role="user", content="show me rings")], [SEARCH_TOOL])
+
+    assert response.message == "Here are some rings."
+    assert mock_client.models.generate_content.call_count == 2
+    assert len(sleep_calls) == 1
+
+
+def test_server_error_raises_after_exhausting_retries(monkeypatch):
+    sleep_calls = []
+    monkeypatch.setattr("app.llm.gemini_provider.time.sleep", lambda s: sleep_calls.append(s))
+
+    server_error = errors.ServerError(
+        503, {"error": {"code": 503, "message": "high demand", "status": "UNAVAILABLE"}}
+    )
+    mock_client = MagicMock()
+    mock_client.models.generate_content.side_effect = server_error
+    provider = GeminiProvider(api_key=None, model="gemini-2.5-flash", client=mock_client)
+
+    with pytest.raises(GeminiProviderError, match="Gemini API error"):
+        provider.generate([ChatMessage(role="user", content="x")], [SEARCH_TOOL])
+
+    assert mock_client.models.generate_content.call_count == 3
+    assert len(sleep_calls) == 2
+
+
 # --- Factory selection (app.llm.factory.get_llm_provider) -------------------
 #
 # NOTE 1: constructing a real `genai.Client(...)` was measured to take ~1s

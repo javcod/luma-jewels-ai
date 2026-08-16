@@ -16,6 +16,7 @@ The exact SDK shapes used here (`Tool.functionDeclarations`,
 
 import json
 import logging
+import time
 import uuid
 from typing import Optional
 
@@ -27,6 +28,16 @@ from app.llm.base import ChatMessage, LLMProvider, LLMResponse, ToolCall, ToolDe
 logger = logging.getLogger("lumajewel.llm.gemini")
 
 DEFAULT_MODEL = "gemini-2.5-flash"
+
+# `errors.ServerError` (5xx, e.g. the transient "model is currently
+# experiencing high demand" 503) is retried a couple of times with a short
+# backoff before giving up — confirmed via direct reproduction that the
+# exact same request/conversation succeeds on a later attempt, so this is
+# upstream capacity flakiness, not a malformed request. `errors.ClientError`
+# (4xx, e.g. bad API key, invalid request) is never retried — retrying an
+# invalid request just wastes time before returning the same error.
+_MAX_ATTEMPTS = 3
+_RETRY_BACKOFF_SECONDS = 1.5
 
 
 class GeminiProviderError(Exception):
@@ -62,22 +73,41 @@ class GeminiProvider(LLMProvider):
             tools=[_to_gemini_tool(tools)] if tools else None,
         )
 
-        try:
-            response = self._client.models.generate_content(
-                model=self._model,
-                contents=contents,
-                config=config,
-            )
-        except errors.APIError as exc:
-            # Covers both ClientError (e.g. invalid/missing API key, bad
-            # request) and ServerError (e.g. timeout, provider outage).
-            logger.exception("Gemini API error")
-            raise GeminiProviderError(f"Gemini API error: {exc}") from exc
-        except Exception as exc:  # noqa: BLE001 - any other SDK/transport failure
-            logger.exception("Unexpected error calling Gemini")
-            raise GeminiProviderError("Unexpected error calling Gemini") from exc
-
-        return _from_gemini_response(response)
+        for attempt in range(1, _MAX_ATTEMPTS + 1):
+            try:
+                response = self._client.models.generate_content(
+                    model=self._model,
+                    contents=contents,
+                    config=config,
+                )
+            except errors.ServerError as exc:
+                # Transient upstream failure (e.g. 503 "high demand") — the
+                # request itself is fine, so a short retry is safe and
+                # usually succeeds (this is a read-only generation call, not
+                # a mutation, so re-sending it has no side effects).
+                if attempt < _MAX_ATTEMPTS:
+                    logger.warning(
+                        "Gemini ServerError on attempt %d/%d, retrying in %.1fs: %s",
+                        attempt,
+                        _MAX_ATTEMPTS,
+                        _RETRY_BACKOFF_SECONDS,
+                        exc,
+                    )
+                    time.sleep(_RETRY_BACKOFF_SECONDS)
+                    continue
+                logger.exception("Gemini API error (exhausted retries)")
+                raise GeminiProviderError(f"Gemini API error: {exc}") from exc
+            except errors.APIError as exc:
+                # ClientError (e.g. invalid/missing API key, bad request) and
+                # any other non-retryable APIError — retrying would just
+                # return the same error, so fail immediately.
+                logger.exception("Gemini API error")
+                raise GeminiProviderError(f"Gemini API error: {exc}") from exc
+            except Exception as exc:  # noqa: BLE001 - any other SDK/transport failure
+                logger.exception("Unexpected error calling Gemini")
+                raise GeminiProviderError("Unexpected error calling Gemini") from exc
+            else:
+                return _from_gemini_response(response)
 
 
 # -- Our types -> Gemini SDK types -------------------------------------------
