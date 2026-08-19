@@ -160,7 +160,7 @@ pytest
 This runs the full suite: health, the product catalog API, both LLM
 providers (fake and Gemini — the latter fully mocked), the 5 product
 tools, the agent orchestration loop, the `/concierge/chat` endpoint, and
-security sanity checks. **116 tests, no internet, no real API key, no
+security sanity checks. **119 tests, no internet, no real API key, no
 database required.** See "Luma Concierge — Agent Architecture" → "Testing
 strategy" below for how the Gemini adapter is tested without a live call.
 A `conftest.py` safety net forces `LLM_PROVIDER=fake` for the whole test
@@ -533,12 +533,23 @@ or a database.**
 ## Relationship to the frontend
 
 This backend is intentionally independent of the React/Vite frontend — it
-does not import from or write into `src/`. `src/data/products.js` has
-**not** been removed or modified; the live UI still renders from it
-unchanged. The backend catalog in `app/data/products.json` is a separate,
-hand-migrated copy — the frontend does not yet call this backend for
-anything. Wiring the frontend to consume `/products` instead of its local
-static import is a future, separately-scoped task.
+does not import from or write into `src/`. The backend catalog in
+`app/data/products.json` is a separate, hand-migrated copy of the original
+`src/data/products.js` data.
+
+**The frontend now calls this backend directly** for two things: the main
+product grid (`App.jsx` fetches `GET /products` on mount via `src/lib/api.js`)
+and Luma Concierge (`POST /concierge/chat`, from
+`src/components/Concierge/LumaConcierge.jsx`). `src/data/products.js` is no
+longer imported anywhere in the frontend — it is unused, kept only as the
+historical source the backend catalog was migrated from.
+
+Three other homepage sections — the category collection tiles
+(`CollectionGrid.jsx`), the "Recommended for You" showcase
+(`AIRecommendation.jsx`), and the Style Quiz's "Aura" profile
+(`StyleQuiz.jsx`) — still use static or client-side rule-based data and are
+**not yet wired** to this backend. See the root `README.md`'s "Known
+Limitations" section.
 
 ## Not included yet
 
@@ -550,5 +561,6 @@ static import is a future, separately-scoped task.
 - Cart/wishlist/order functionality (no write tools exist at all)
 - Persistent conversation memory across requests
 - Multi-agent architecture
-- Frontend migration to the new `/products` or `/concierge/chat` APIs
-- Deployment configuration
+- Wiring the collection tiles, "Recommended for You," and Style Quiz
+  homepage sections to this backend (the product grid and Concierge chat
+  already are — see "Relationship to the frontend" above)
