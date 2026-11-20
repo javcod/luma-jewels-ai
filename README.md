@@ -1,5 +1,7 @@
 # Luma Jewels AI
 
+[![CI](https://github.com/javcod/luma-jewels-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/javcod/luma-jewels-ai/actions/workflows/ci.yml)
+
 An AI-powered luxury jewellery shopping platform combining conversational product discovery, a tool-using AI concierge, and a premium e-commerce front end — backed by a real FastAPI service and Google Gemini, not a mock.
 
 🔴 **Live Demo:** [luma-jewels-ai.vercel.app](https://luma-jewels-ai.vercel.app/)
