@@ -4,10 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { LumaConcierge } from "./LumaConcierge";
 import { sendConciergeMessage } from "../../lib/api";
 
-// The real network call is mocked here — this test is about the
-// component's own contract (render real backend data, never fabricate a
-// reply, show a friendly message on failure), not about Gemini/the backend
-// itself (that's backend/tests/test_concierge_api.py's job).
+// The API call is mocked; backend behaviour is covered by the backend tests.
 vi.mock("../../lib/api", () => ({
   sendConciergeMessage: vi.fn(),
 }));

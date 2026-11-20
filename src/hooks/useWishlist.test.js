@@ -92,9 +92,7 @@ describe("useWishlist", () => {
     });
     unmount();
 
-    // Simulates a fresh page load: a brand new hook instance reads
-    // whatever is already in localStorage, same key the first instance
-    // wrote to.
+    // Simulate a page reload with a new hook instance
     const { result: afterRefresh } = renderHook(() => useWishlist());
     expect(afterRefresh.current.count).toBe(1);
     expect(afterRefresh.current.isWishlisted(product.id)).toBe(true);

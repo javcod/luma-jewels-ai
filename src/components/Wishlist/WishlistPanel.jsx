@@ -1,11 +1,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Heart, X } from "lucide-react";
 
-// Minimal real wishlist view — same slide-in panel pattern as Luma
-// Concierge (see LumaConcierge.jsx), but no AI/backend involved: this is
-// pure client state (see src/hooks/useWishlist.js), read directly from
-// props. Deliberately no routing/page — a panel is enough for a saved-items
-// list of this size.
+// Slide-in panel listing wishlist items (client-side only).
 const WishlistPanel = ({ isOpen, onClose, items, onRemove, onProductClick }) => {
   const hasItems = items.length > 0;
 

@@ -5,10 +5,7 @@ import { Button } from "../ui/Button";
 import { GlassCard } from "../ui/GlassCard";
 import { cn } from "../../utils/cn";
 
-// A hand-picked, static showcase of the range of the Luma collection — not
-// personalized, not AI-generated. Real, personalized, AI-grounded
-// recommendations come from Luma Concierge (POST /concierge/chat); see
-// src/components/Concierge/LumaConcierge.jsx.
+// Static, hand-picked showcase. Personalized picks come from Luma Concierge.
 const recommendations = [
   {
     id: 1,

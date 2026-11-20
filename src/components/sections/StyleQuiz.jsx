@@ -159,9 +159,7 @@ const StyleQuiz = () => {
   const generateMatch = (finalAnswers) => {
     setIsGenerating(true);
 
-    // A short, honest transition — not a simulated "AI thinking" delay.
-    // This is a deterministic lookup (see getAuraProfile above), not a
-    // model call, so it doesn't pretend to take meaningful time to compute.
+    // Short transition; the result is a simple lookup
     setTimeout(() => {
       setProfile(getAuraProfile(finalAnswers));
       setIsGenerating(false);

@@ -2,22 +2,14 @@ import { motion } from "motion/react";
 import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { Button } from "../ui/Button";
 
-// `isWishlisted` is real state owned by the caller (see src/hooks/useWishlist.js)
-// — this component never tracks its own "added" flag, so the heart/button
-// state can never drift from the actual wishlist.
+// Wishlist state is owned by the caller (useWishlist).
 const ProductCard = ({ product, onClick, onWishlist, compact = false, isWishlisted = false }) => {
   const handleWishlistClick = (e) => {
     e.stopPropagation();
     onWishlist?.(product);
   };
 
-  // Compact variant: a small horizontal row, used for recommendations
-  // rendered inside the narrow Luma Concierge panel (Phase 5B/5C). The
-  // default (non-compact) card below — used by the main product grid — is
-  // unchanged. Same component, same click-to-open-ProductModal contract;
-  // just a smaller layout for a space-constrained context. A real <button>
-  // (not a clickable div) so it's keyboard-focusable and Enter/Space-
-  // activatable without extra handlers.
+  // Compact horizontal layout used inside the Concierge panel
   if (compact) {
     return (
       <motion.button

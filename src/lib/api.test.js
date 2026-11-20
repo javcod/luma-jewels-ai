@@ -1,12 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { getProducts, getProduct, sendConciergeMessage, ApiError } from "./api";
 
-// This is the layer App.jsx's product grid and LumaConcierge both call
-// into — see src/App.jsx (getProducts) and
-// src/components/Concierge/LumaConcierge.jsx (sendConciergeMessage).
-// Testing it directly here (rather than mounting the full page, which pulls
-// in Lenis/IntersectionObserver-dependent sections) covers the same
-// fetching/error-handling contract with far less test-environment risk.
+// Tests the API client directly instead of mounting the full page.
 describe("lib/api", () => {
   beforeEach(() => {
     globalThis.fetch = vi.fn();

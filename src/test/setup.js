@@ -1,3 +1,2 @@
-// Vitest setup — adds jest-dom's DOM matchers (toBeInTheDocument, etc.) to
-// every test file. See vite.config.js `test.setupFiles`.
+// Adds jest-dom matchers to every test
 import "@testing-library/jest-dom/vitest";

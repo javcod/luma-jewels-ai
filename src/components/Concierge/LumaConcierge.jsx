@@ -5,12 +5,6 @@ import { Button } from "../ui/Button";
 import { ProductCard } from "../ui/ProductCard";
 import { sendConciergeMessage } from "../../lib/api";
 
-// Phase 5C: production-quality polish on top of Phase 5B's working
-// integration. Still deliberately NOT doing: markdown rendering
-// (response.message is shown as plain text, newlines preserved via CSS
-// only) or a raw dump of tools_used/applied_filters/trace — those are
-// distilled into one short, human-readable line per assistant turn (see
-// buildActivitySummary). No new dependencies.
 const SUGGESTIONS = [
   "Find a ring",
   "Show me something under $5,000",
@@ -24,8 +18,7 @@ const nextMessageId = () => {
   return messageIdCounter;
 };
 
-// Maps a tool name to a short, safe, human-readable activity phrase.
-// Sourced only from `tools_used` (real backend field) — never invented.
+// Short activity phrase for each tool name
 const TOOL_ACTIVITY_LABELS = {
   search_products: "Searched the catalog",
   filter_products: "Filtered the catalog",
@@ -46,11 +39,8 @@ function formatFilterValue(key, value) {
   return String(value);
 }
 
-// Builds one short, user-safe activity line from real response metadata
-// (tools_used, applied_filters, recommended_products.length). Never reads
-// or renders trace/reasoning text directly — only mechanically formats
-// fields that are already safe, structured data. e.g.:
-// "Searched the catalog · Applied: Rings · Under $5,000 · Found 1 piece"
+// One-line summary of what the agent did, built from the response fields,
+// e.g. "Searched the catalog · Applied: Rings · Under $5,000 · Found 1 piece"
 function buildActivitySummary(response) {
   const parts = [];
   const seenLabels = new Set();
@@ -83,8 +73,6 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastFailedMessage, setLastFailedMessage] = useState(null);
-  // Only ever set inside the setTimeout callback below (async), never
-  // synchronously in the effect body itself.
   const [showColdStartHint, setShowColdStartHint] = useState(false);
 
   const scrollContainerRef = useRef(null);
@@ -92,27 +80,20 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
   const previouslyFocusedRef = useRef(null);
   const isSendingRef = useRef(false); // synchronous guard, immune to render-timing races
 
-  // Auto-scroll the message list itself (never the underlying page) to the
-  // newest content. Direct scrollTop assignment on the scroll container —
-  // not scrollIntoView — so there is no possibility of an ancestor/page
-  // scroll being triggered.
+  // Scroll only the message list, not the page
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, isLoading]);
 
-  // The Render free-tier backend can take 30-60s to wake from a cold start,
-  // and each Concierge turn also makes two Gemini calls. After a few
-  // seconds, add an honest note rather than leaving the "thinking" dots
-  // unexplained.
+  // Cold starts plus two Gemini calls can be slow, so show a note after a few seconds
   useEffect(() => {
     if (!isLoading) return undefined;
     const timer = setTimeout(() => setShowColdStartHint(true), 6000);
     return () => clearTimeout(timer);
   }, [isLoading]);
 
-  // Focus management: move focus into the panel when it opens (input),
-  // and restore focus to whatever triggered it when it closes.
+  // Focus the input on open and restore focus on close
   useEffect(() => {
     if (isOpen) {
       previouslyFocusedRef.current = document.activeElement;
@@ -127,9 +108,7 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
 
   const sendMessage = async (rawText) => {
     const trimmed = rawText.trim();
-    // isSendingRef is a synchronous, render-independent lock — prevents a
-    // second overlapping request from a rapid double Enter/click even if
-    // React hasn't yet re-rendered with isLoading=true.
+    // Ref-based lock prevents duplicate sends before React re-renders
     if (!trimmed || isSendingRef.current) return;
     isSendingRef.current = true;
 
@@ -148,15 +127,12 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
           id: nextMessageId(),
           role: "assistant",
           content: response?.message ?? "",
-          // Real backend data only — never fabricated, never a second
-          // catalog. Recommended products render via the same ProductCard
-          // (compact) used everywhere else in the app.
           recommendedProducts: response?.recommended_products ?? [],
           activitySummary: buildActivitySummary(response),
         },
       ]);
     } catch {
-      // User-friendly only — never surface ApiError's status/body/stack here.
+      // Show a friendly message, not the raw error
       setError("I couldn't get a response just now. Please try again.");
       setLastFailedMessage(trimmed);
     } finally {
@@ -180,14 +156,13 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
 
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
-    // Lightweight auto-grow, capped, no external library.
+    // Auto-grow up to a max height
     const el = event.target;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   };
 
   const handleSuggestionClick = (suggestion) => {
-    // Same submit path as the form — no separate API call for suggestions.
     sendMessage(suggestion);
   };
 

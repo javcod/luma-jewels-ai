@@ -1,18 +1,8 @@
-// Minimal fetch-based client for the LumaJewel backend (see backend/README.md).
-//
-// Deliberately dependency-free: native `fetch` only, no axios/React Query.
-// Nothing in this file touches React — it's plain functions any component
-// can call. Base URL comes from VITE_API_BASE_URL (Vite's built-in env var
-// support, no extra config needed), falling back to the local dev backend.
+// Fetch client for the backend API. Base URL comes from VITE_API_BASE_URL.
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-/**
- * Thrown for any non-2xx response. Carries the HTTP status and, where the
- * backend returned one, its parsed error body — so callers can distinguish
- * e.g. a 404 "not found" from a 422 validation error from a 500, without
- * parsing strings.
- */
+/** Thrown for non-2xx responses; includes the status and parsed error body. */
 export class ApiError extends Error {
   constructor(message, { status, body } = {}) {
     super(message);
@@ -22,13 +12,7 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * Extract a human-readable message from a FastAPI-style error body.
- * Handles the shapes this backend actually produces:
- *   - HTTPException:            { "detail": "Product 9999 not found" }
- *   - Pydantic validation (422): { "detail": [{ "msg": "...", ... }, ...] }
- *   - Global handler (500):     { "status": "error", "detail": "Internal server error" }
- */
+/** Get a readable message from a FastAPI error body (string or validation list). */
 function extractErrorMessage(body, fallback) {
   const detail = body?.detail;
   if (typeof detail === "string") return detail;
@@ -38,17 +22,13 @@ function extractErrorMessage(body, fallback) {
   return fallback;
 }
 
-/**
- * Shared response handler: parses JSON and throws ApiError for non-2xx
- * responses. Never throws on a malformed/empty error body — falls back to
- * the HTTP status text instead.
- */
+/** Parse JSON and throw ApiError for non-2xx responses. */
 async function handleResponse(response) {
   let body = null;
   try {
     body = await response.json();
   } catch {
-    // No JSON body (e.g. a network-layer error page) — body stays null.
+    // No JSON body
   }
 
   if (!response.ok) {
@@ -64,8 +44,7 @@ async function request(path, options) {
   try {
     response = await fetch(`${API_BASE_URL}${path}`, options);
   } catch (cause) {
-    // Network-level failure (backend unreachable, CORS, offline, etc.) —
-    // fetch rejects rather than resolving, so it needs its own ApiError.
+    // Network failure (backend down, CORS, offline)
     throw new ApiError("Unable to reach the LumaJewel backend. Is it running?", { status: null, body: null, cause });
   }
   return handleResponse(response);
@@ -88,8 +67,7 @@ export function getProducts(filters = {}) {
 }
 
 /**
- * GET /products/{id} — a single product, or throws ApiError (status 404)
- * if it doesn't exist.
+ * GET /products/{id}. Throws ApiError (404) if not found.
  * @param {number|string} id
  * @returns {Promise<object>}
  */
@@ -98,9 +76,7 @@ export function getProduct(id) {
 }
 
 /**
- * POST /concierge/chat — send one user message, get back the Concierge's
- * reply plus any real, catalog-grounded product recommendations and the
- * user-safe activity trace.
+ * POST /concierge/chat: returns the reply, recommended products and activity trace.
  * @param {string} message
  * @returns {Promise<{message: string, recommended_products: object[], tools_used: string[], applied_filters: object|null, iterations: number, trace: object[]}>}
  */

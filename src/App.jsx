@@ -21,10 +21,7 @@ import { useWishlist } from "./hooks/useWishlist";
 
 function App() {
   const [products, setProducts] = useState([]);
-  // Effect below runs once on mount ([] deps) — these already start at the
-  // correct "loading" values, so there's nothing to reset synchronously
-  // inside the effect body itself (see the react-hooks/set-state-in-effect
-  // rule this previously tripped).
+  // Starts in the loading state; the effect below fetches once on mount
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState(null);
 
@@ -33,9 +30,6 @@ function App() {
   const [wishlistMessage, setWishlistMessage] = useState("");
   const [isConciergeOpen, setIsConciergeOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
-  // Only ever set inside an async callback (the setTimeout below), never
-  // synchronously in an effect body — see the react-hooks/set-state-in-effect
-  // note above.
   const [showColdStartHint, setShowColdStartHint] = useState(false);
 
   const wishlist = useWishlist();
@@ -50,7 +44,7 @@ function App() {
       })
       .catch(() => {
         if (isCancelled) return;
-        // User-friendly only — never surface the raw ApiError/status/backend detail here.
+        // Show a friendly message, not the raw error
         setProductsError("We couldn't load the collection right now. Please try again shortly.");
       })
       .finally(() => {
@@ -63,10 +57,7 @@ function App() {
     };
   }, []);
 
-  // The Render free-tier backend can take 30-60s to wake from a cold start.
-  // Rather than leaving a bare "Loading…" indefinitely, add an honest
-  // explanation after a few seconds. The state update lives inside the
-  // setTimeout callback (async), not synchronously in the effect body.
+  // The free-tier backend can take 30-60s to wake up, so explain the delay
   useEffect(() => {
     if (!isLoadingProducts) return undefined;
     const timer = setTimeout(() => setShowColdStartHint(true), 6000);
@@ -83,9 +74,7 @@ function App() {
     setSelectedProduct(null);
   };
 
-  // Toggles real wishlist membership (see src/hooks/useWishlist.js) and
-  // shows a short toast reflecting what actually happened — "added" or
-  // "removed" — rather than always claiming "added".
+  // Toggle the item and show an "added" or "removed" toast
   const handleWishlist = (product) => {
     const action = wishlist.toggleItem(product);
     setWishlistMessage(
@@ -97,9 +86,7 @@ function App() {
     }, 2200);
   };
 
-  // Concierge and the wishlist are both fixed-position slide-in panels in
-  // the same corner (see LumaConcierge.jsx / WishlistPanel.jsx) — only one
-  // should ever be open at once, so opening either closes the other.
+  // Concierge and wishlist panels share a corner, so only one can be open
   const handleToggleConcierge = () => {
     setIsConciergeOpen((prev) => {
       const next = !prev;
@@ -142,8 +129,7 @@ function App() {
 
           <HowLumaWorks />
 
-          {/* Live product grid — the one section on this page backed by the
-              real FastAPI catalog (GET /products), not static/demo data. */}
+          {/* Product grid, loaded from GET /products */}
           <section id="collection-grid" className="bg-white px-6 py-32 md:px-12">
             <div className="mx-auto max-w-7xl">
               <div className="mb-24 text-center">
