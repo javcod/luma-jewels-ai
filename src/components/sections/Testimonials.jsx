@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "motion/react";
 
 const testimonials = [
@@ -9,7 +8,7 @@ const testimonials = [
     id: "01",
   },
   {
-    quote: "The 'Editorial Modern' recommendation for my gala appearance was breathtaking. The neural engine understands silhouettes better than any stylist I've worked with.",
+    quote: "The 'Editorial Modern' recommendation for my gala appearance was breathtaking. Luma Concierge understood exactly what I was after, better than any stylist I've worked with.",
     author: "Elena Rose",
     role: "Fashion Curator",
     id: "02",
@@ -35,7 +34,7 @@ const Testimonials = () => {
         </div>
 
         <div className="flex flex-col gap-32">
-          {testimonials.map((item, i) => (
+          {testimonials.map((item) => (
             <motion.div
               key={item.id}
               initial={{ opacity: 0, y: 50 }}

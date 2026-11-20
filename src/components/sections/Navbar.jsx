@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, Heart, ShoppingBag, Menu, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { cn } from "../../utils/cn";
 
-const Navbar = ({ onToggleConcierge }) => {
+const Navbar = ({ onToggleConcierge, wishlistCount = 0, onOpenWishlist }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -19,10 +19,11 @@ const Navbar = ({ onToggleConcierge }) => {
   const navLinks = [
     { name: "Home", href: "#" },
     { name: "Collections", href: "#collections" },
-    { name: "AI Match", href: "#ai-match" },
+    { name: "Curated Edit", href: "#ai-match" },
     { name: "Style Quiz", href: "#quiz" },
-    { name: "Wishlist", href: "#wishlist" },
   ];
+
+  const hasWishlistItems = wishlistCount > 0;
 
   return (
     <nav
@@ -66,9 +67,18 @@ const Navbar = ({ onToggleConcierge }) => {
             <button className="hover:text-graphite transition-all duration-300">
               <Search size={18} strokeWidth={1.2} />
             </button>
-            <button className="hover:text-graphite transition-all duration-300 relative">
+            <button
+              type="button"
+              onClick={onOpenWishlist}
+              aria-label={hasWishlistItems ? `Open wishlist (${wishlistCount} saved)` : "Open wishlist"}
+              className="relative hover:text-graphite transition-all duration-300"
+            >
               <Heart size={18} strokeWidth={1.2} />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-champagne rounded-full border border-ivory scale-75 animate-pulse"></span>
+              {hasWishlistItems && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-3.5 min-w-[0.875rem] items-center justify-center rounded-full bg-champagne px-1 text-[8px] font-bold leading-none text-graphite border border-ivory">
+                  {wishlistCount}
+                </span>
+              )}
             </button>
             <button className="hover:text-graphite transition-all duration-300">
               <ShoppingBag size={18} strokeWidth={1.2} />
@@ -115,9 +125,24 @@ const Navbar = ({ onToggleConcierge }) => {
                 </a>
               ))}
               <div className="h-px bg-black/5" />
-              <div className="flex gap-10 py-2 text-graphite/60">
+              <div className="flex items-center gap-10 py-2 text-graphite/60">
                 <Search size={22} strokeWidth={1} />
-                <Heart size={22} strokeWidth={1} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    onOpenWishlist?.();
+                  }}
+                  aria-label={hasWishlistItems ? `Open wishlist (${wishlistCount} saved)` : "Open wishlist"}
+                  className="relative"
+                >
+                  <Heart size={22} strokeWidth={1} />
+                  {hasWishlistItems && (
+                    <span className="absolute -top-1 -right-1.5 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-champagne px-1 text-[9px] font-bold leading-none text-graphite border border-ivory">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </button>
                 <ShoppingBag size={22} strokeWidth={1} />
               </div>
               <Button

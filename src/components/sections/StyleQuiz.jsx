@@ -1,15 +1,14 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Sparkles,
   ArrowRight,
   ArrowLeft,
   RefreshCw,
   CheckCircle2,
-  Brain,
+  Compass,
   Gem,
   Crown,
-  WandSparkles,
+  ListChecks,
 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { GlassCard } from "../ui/GlassCard";
@@ -160,11 +159,14 @@ const StyleQuiz = () => {
   const generateMatch = (finalAnswers) => {
     setIsGenerating(true);
 
+    // A short, honest transition — not a simulated "AI thinking" delay.
+    // This is a deterministic lookup (see getAuraProfile above), not a
+    // model call, so it doesn't pretend to take meaningful time to compute.
     setTimeout(() => {
       setProfile(getAuraProfile(finalAnswers));
       setIsGenerating(false);
       setIsComplete(true);
-    }, 2600);
+    }, 900);
   };
 
   const resetQuiz = () => {
@@ -176,10 +178,7 @@ const StyleQuiz = () => {
   };
 
   const goToMatches = () => {
-    const section = document.querySelector("#neural-matches");
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-    }
+    document.querySelector("#ai-match")?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -195,7 +194,7 @@ const StyleQuiz = () => {
             viewport={{ once: true }}
             className="mb-6 block text-[11px] font-bold uppercase tracking-[0.6em] text-graphite/30"
           >
-            Interactive AI Curation
+            Interactive Style Quiz
           </motion.span>
 
           <motion.h2
@@ -211,8 +210,9 @@ const StyleQuiz = () => {
           </motion.h2>
 
           <p className="mx-auto mt-6 max-w-2xl text-sm leading-8 text-graphite/45 md:text-base">
-            Answer four quick questions and Luma AI will create your luxury
-            jewellery style profile with a personalised match score.
+            Answer four quick questions and we'll match you to a Luma style
+            profile based on your answers — a quick, deterministic quiz, not
+            an AI conversation. For that, try Luma Concierge.
           </p>
         </div>
 
@@ -248,7 +248,7 @@ const StyleQuiz = () => {
 
                 <div className="mb-8 flex justify-center">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full border border-champagne/30 bg-champagne/10 text-champagne-800">
-                    <Brain size={26} strokeWidth={1.3} />
+                    <Compass size={26} strokeWidth={1.3} />
                   </div>
                 </div>
 
@@ -313,20 +313,20 @@ const StyleQuiz = () => {
                   />
 
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Sparkles
-                      size={40}
-                      className="animate-pulse text-champagne-800"
+                    <Compass
+                      size={36}
+                      className="text-champagne-800"
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-4">
                   <h3 className="font-serif text-3xl italic tracking-wide text-graphite md:text-4xl">
-                    Creating Your Luma Style Profile...
+                    Preparing Your Style Profile
                   </h3>
 
-                  <p className="animate-pulse text-[11px] uppercase tracking-[0.5em] text-graphite/30">
-                    Analysing Occasion · Metal Tone · Budget · Style Intent
+                  <p className="text-[11px] uppercase tracking-[0.5em] text-graphite/30">
+                    Matching your answers to the Luma collection
                   </p>
                 </div>
               </motion.div>
@@ -380,7 +380,7 @@ const StyleQuiz = () => {
                     </div>
 
                     <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.35em] text-graphite/30">
-                      AI Match
+                      Style Fit
                     </p>
 
                     <h4 className="text-4xl font-serif italic text-champagne-800">
@@ -390,7 +390,7 @@ const StyleQuiz = () => {
 
                   <div className="border border-graphite/10 bg-white/70 p-7 text-left">
                     <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-champagne/10 text-champagne-800">
-                      <WandSparkles size={20} />
+                      <ListChecks size={20} />
                     </div>
 
                     <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.35em] text-graphite/30">
@@ -405,7 +405,7 @@ const StyleQuiz = () => {
 
                 <div className="max-w-3xl border border-champagne/20 bg-champagne/10 p-8">
                   <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.4em] text-champagne-800/70">
-                    AI Recommendation Reason
+                    Why This Suits You
                   </p>
 
                   <p className="text-sm leading-8 text-graphite/60 md:text-base">
@@ -420,7 +420,7 @@ const StyleQuiz = () => {
                     onClick={goToMatches}
                     className="px-14 shadow-2xl"
                   >
-                    View Neural Matches
+                    View Featured Pieces
                   </Button>
 
                   <Button

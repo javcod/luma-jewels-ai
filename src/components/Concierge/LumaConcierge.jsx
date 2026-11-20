@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { Send, Sparkles, X } from "lucide-react";
 import { Button } from "../ui/Button";
 import { ProductCard } from "../ui/ProductCard";
@@ -83,6 +83,9 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [lastFailedMessage, setLastFailedMessage] = useState(null);
+  // Only ever set inside the setTimeout callback below (async), never
+  // synchronously in the effect body itself.
+  const [showColdStartHint, setShowColdStartHint] = useState(false);
 
   const scrollContainerRef = useRef(null);
   const inputRef = useRef(null);
@@ -97,6 +100,16 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
     const el = scrollContainerRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, isLoading]);
+
+  // The Render free-tier backend can take 30-60s to wake from a cold start,
+  // and each Concierge turn also makes two Gemini calls. After a few
+  // seconds, add an honest note rather than leaving the "thinking" dots
+  // unexplained.
+  useEffect(() => {
+    if (!isLoading) return undefined;
+    const timer = setTimeout(() => setShowColdStartHint(true), 6000);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   // Focus management: move focus into the panel when it opens (input),
   // and restore focus to whatever triggered it when it closes.
@@ -124,6 +137,7 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
     setInputValue("");
     setError(null);
     setLastFailedMessage(null);
+    setShowColdStartHint(false);
     setIsLoading(true);
 
     try {
@@ -299,11 +313,18 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
                 ))}
 
                 {isLoading && (
-                  <div className="mr-auto flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-champagne/20 bg-champagne/5 px-4 py-3.5">
-                    <span className="sr-only">Luma is thinking</span>
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-champagne-800/50 [animation-delay:-0.3s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-champagne-800/50 [animation-delay:-0.15s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-champagne-800/50" />
+                  <div className="mr-auto flex max-w-[85%] flex-col gap-2">
+                    <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-champagne/20 bg-champagne/5 px-4 py-3.5">
+                      <span className="sr-only">Luma is thinking</span>
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-champagne-800/50 [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-champagne-800/50 [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-champagne-800/50" />
+                    </div>
+                    {showColdStartHint && (
+                      <p className="px-1 text-[9px] uppercase tracking-[0.15em] text-graphite/35">
+                        Our free-tier server can take a little longer to respond on its first request.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

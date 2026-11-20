@@ -1,14 +1,13 @@
-import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Heart, ShoppingBag, Eye } from "lucide-react";
 import { Button } from "../ui/Button";
 
-const ProductCard = ({ product, onClick, onWishlist, compact = false }) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
-
+// `isWishlisted` is real state owned by the caller (see src/hooks/useWishlist.js)
+// — this component never tracks its own "added" flag, so the heart/button
+// state can never drift from the actual wishlist.
+const ProductCard = ({ product, onClick, onWishlist, compact = false, isWishlisted = false }) => {
   const handleWishlistClick = (e) => {
     e.stopPropagation();
-    setIsWishlisted(true);
     onWishlist?.(product);
   };
 
@@ -70,28 +69,13 @@ const ProductCard = ({ product, onClick, onWishlist, compact = false }) => {
           className="h-full w-full object-cover transition-transform duration-[2.5s] ease-out group-hover:scale-110"
         />
 
-        {/* Match Badge — only shown when a real match value exists (backend
-            Product objects never fabricate one; see backend/README.md) */}
-        {product.match && (
-          <div className="absolute right-5 top-5 z-10">
-            <div className="flex h-14 w-14 -rotate-12 transform flex-col items-center justify-center rounded-full border border-dashed border-champagne/60 bg-white/30 shadow-2xl ring-4 ring-white/20 backdrop-blur-md transition-all duration-700 group-hover:rotate-0 group-hover:scale-110">
-              <span className="text-[8px] font-bold uppercase leading-none tracking-tighter text-graphite opacity-40">
-                Match
-              </span>
-              <span className="mt-1 font-serif text-[16px] italic leading-none text-graphite">
-                {product.match}
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Hover Actions */}
         <div className="absolute inset-0 z-10 flex items-center justify-center gap-5 bg-black/10 opacity-0 backdrop-blur-[2px] transition-all duration-700 group-hover:opacity-100">
           <motion.button
             whileHover={{ scale: 1.1, backgroundColor: "#F7E7CE" }}
             onClick={handleWishlistClick}
             className="flex h-12 w-12 translate-y-6 items-center justify-center rounded-full bg-white text-graphite shadow-2xl duration-700 delay-75 group-hover:translate-y-0"
-            aria-label="Add to wishlist"
+            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
           >
             <Heart
               size={20}
@@ -140,7 +124,7 @@ const ProductCard = ({ product, onClick, onWishlist, compact = false }) => {
           <div className="h-px flex-grow bg-black/[0.06]" />
 
           <span className="whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.4em] text-graphite/20">
-            Neural Curated
+            Luma Collection
           </span>
 
           <div className="h-px flex-grow bg-black/[0.06]" />
@@ -152,7 +136,7 @@ const ProductCard = ({ product, onClick, onWishlist, compact = false }) => {
           onClick={handleWishlistClick}
           className="group/btn w-full rounded-none py-4 transition-all duration-700 hover:bg-graphite hover:text-white"
         >
-          {isWishlisted ? "Added to Collection" : "Add to Collection"}
+          {isWishlisted ? "Saved to Wishlist" : "Add to Wishlist"}
 
           <ShoppingBag
             size={12}

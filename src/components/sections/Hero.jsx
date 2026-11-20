@@ -1,10 +1,10 @@
-import React, { useRef } from "react";
+import { useRef } from "react";
 import { motion, useScroll, useTransform } from "motion/react";
 import { Button } from "../ui/Button";
 import { GlassCard } from "../ui/GlassCard";
 import { Sparkles, ArrowRight } from "lucide-react";
 
-const Hero = () => {
+const Hero = ({ onFindMyStyle, onExploreCollection }) => {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -38,20 +38,20 @@ const Hero = () => {
               Designed for You.
             </h1>
             <p className="text-xs md:text-sm uppercase tracking-[0.25em] text-graphite/40 max-w-md leading-relaxed font-medium">
-              Discover rings, necklaces, and luxury gifts matched to your personal narrative using our proprietary AI curation.
+              Discover rings, necklaces, and luxury gifts — then chat with Luma Concierge, our AI shopping assistant, to find the right piece for you.
             </p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.2, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col sm:flex-row gap-8"
           >
-            <Button variant="primary" size="lg" className="group shadow-2xl">
+            <Button type="button" onClick={onFindMyStyle} variant="primary" size="lg" className="group shadow-2xl">
               Find My Style <ArrowRight size={14} className="ml-3 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="outline" size="lg" className="backdrop-blur-sm">
+            <Button type="button" onClick={onExploreCollection} variant="outline" size="lg" className="backdrop-blur-sm">
               Explore Collection
             </Button>
           </motion.div>
@@ -64,7 +64,7 @@ const Hero = () => {
           >
             {[
               { label: "Hand-crafted", value: "Atelier" },
-              { label: "Precision", value: "99.2% Match" },
+              { label: "Curated by", value: "Luma AI" },
               { label: "Maison", value: "Paris" },
             ].map((stat) => (
               <div key={stat.label} className="flex flex-col gap-2">
@@ -99,10 +99,12 @@ const Hero = () => {
           >
             <GlassCard className="py-5 px-8 md:px-10 border-white/30 bg-white/40 shadow-2xl rounded-none">
               <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-full bg-graphite flex items-center justify-center text-ivory text-sm font-serif italic border border-champagne/30">92%</div>
+                <div className="w-12 h-12 rounded-full bg-graphite flex items-center justify-center text-ivory border border-champagne/30">
+                  <Sparkles size={18} strokeWidth={1.5} />
+                </div>
                 <div>
-                  <p className="text-[9px] uppercase tracking-[0.3em] text-graphite/40 font-bold">Style Match</p>
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-graphite font-bold">Perfect for you</p>
+                  <p className="text-[9px] uppercase tracking-[0.3em] text-graphite/40 font-bold">Curated Edit</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-graphite font-bold">Hand-picked for you</p>
                 </div>
               </div>
             </GlassCard>
@@ -116,8 +118,8 @@ const Hero = () => {
           >
             <GlassCard className="py-5 px-8 border-white/30 bg-white/40 shadow-2xl rounded-none">
               <p className="text-[9px] uppercase tracking-[0.4em] text-graphite/40 font-bold mb-2 flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-champagne-600 animate-pulse" />
-                AI Analysis
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-champagne-600" />
+                Curator's Note
               </p>
               <p className="text-[11px] uppercase tracking-[0.15em] text-graphite leading-relaxed font-bold italic">
                 "Pairs elegantly with <br /> evening silhouettes."

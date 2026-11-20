@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "motion/react";
 
 const capabilities = [
@@ -8,9 +7,9 @@ const capabilities = [
     metric: "Atelier Certified",
   },
   {
-    title: "AI-Powered Personalization",
-    detail: "Neural style-matching algorithms",
-    metric: "99.2% Accuracy",
+    title: "Luma Concierge",
+    detail: "A real, tool-using AI assistant grounded in our live catalog",
+    metric: "Powered by Gemini",
   },
   {
     title: "Secure Luxury Checkout",

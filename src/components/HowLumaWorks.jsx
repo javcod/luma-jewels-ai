@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import { Sparkles, Brain, SlidersHorizontal, Gem, BadgeCheck } from "lucide-react";
+import { motion } from "motion/react";
+import { ListFilter, SlidersHorizontal, Gem, BadgeCheck } from "lucide-react";
 
 const steps = [
   {
@@ -8,14 +8,14 @@ const steps = [
     text: "The user selects occasion, budget, metal tone, jewellery type, and design preference.",
   },
   {
-    icon: Brain,
-    title: "AI Preference Mapping",
-    text: "Luma AI converts choices into a style profile and compares it with every jewellery piece.",
+    icon: ListFilter,
+    title: "Preference Mapping",
+    text: "Your choices are converted into a style profile and compared against the collection.",
   },
   {
-    icon: Sparkles,
+    icon: BadgeCheck,
     title: "Match Score",
-    text: "Each product gets a personalized score based on elegance, gifting intent, and user taste.",
+    text: "Each product gets a deterministic score based on elegance, gifting intent, and your answers.",
   },
   {
     icon: Gem,
@@ -39,17 +39,17 @@ export default function HowLumaWorks() {
         >
           <div className="mx-auto mb-5 flex w-fit items-center gap-2 rounded-full border border-amber-200/20 bg-white/5 px-5 py-2 text-sm text-amber-200">
             <BadgeCheck size={16} />
-            AI Personalisation Engine
+            Style Discovery
           </div>
 
           <h2 className="text-4xl font-semibold tracking-tight md:text-6xl">
-            How Luma AI Finds Your Jewellery Match
+            How the Style Quiz Works
           </h2>
 
           <p className="mt-5 text-base leading-8 text-white/65 md:text-lg">
-            LumaJewels AI is designed as a luxury shopping prototype where user
-            preferences are transformed into intelligent jewellery recommendations
-            with personalized match scores.
+            A quick, deterministic style quiz that turns your answers into a
+            personalised style profile and a curated set of recommendations —
+            separate from Luma Concierge, our real AI shopping assistant.
           </p>
         </motion.div>
 
@@ -94,13 +94,15 @@ export default function HowLumaWorks() {
           className="mt-14 rounded-[2rem] border border-amber-200/20 bg-gradient-to-r from-amber-200/10 via-white/[0.04] to-amber-200/10 p-6 text-center shadow-2xl"
         >
           <p className="text-sm uppercase tracking-[0.35em] text-amber-200">
-            Prototype Intelligence
+            Two Kinds of Personalization
           </p>
 
           <p className="mx-auto mt-4 max-w-4xl text-lg leading-8 text-white/75">
-            The goal is to demonstrate how luxury jewellery discovery can become
-            more personal using AI-driven recommendations, interactive quizzes,
-            match scoring, wishlist intent, and curated product storytelling.
+            Luma Concierge is a real, tool-using AI assistant — powered by
+            Gemini — that searches the live catalog and grounds every answer in
+            real product data. This style quiz, the match scoring above, and
+            your wishlist are deterministic, not AI: no model reasoning is
+            involved, and that's by design.
           </p>
         </motion.div>
       </div>

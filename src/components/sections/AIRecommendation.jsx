@@ -1,18 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, ShoppingBag, Sparkles, ChevronRight, Info } from "lucide-react";
+import { Heart, ShoppingBag, ChevronRight, Info, Gem } from "lucide-react";
 import { Button } from "../ui/Button";
 import { GlassCard } from "../ui/GlassCard";
 import { cn } from "../../utils/cn";
 
+// A hand-picked, static showcase of the range of the Luma collection — not
+// personalized, not AI-generated. Real, personalized, AI-grounded
+// recommendations come from Luma Concierge (POST /concierge/chat); see
+// src/components/Concierge/LumaConcierge.jsx.
 const recommendations = [
   {
     id: 1,
     name: "Astraea Diamond Ring",
     price: "$2,450",
     image: "https://images.unsplash.com/photo-1613945407943-59cd755fd69e?auto=format&w=800&q=80",
-    match: "98%",
-    reason: "Matched with your preference for minimalist gold designs and occasion: evening wear.",
+    note: "A minimalist gold silhouette suited to evening wear.",
     material: "18K Solid Gold, 0.5ct VVS Diamond",
   },
   {
@@ -20,8 +23,7 @@ const recommendations = [
     name: "Luna Pearl Earrings",
     price: "$1,120",
     image: "https://images.pexels.com/photos/1395305/pexels-photo-1395305.jpeg?auto=compress&cs=tinysrgb&w=800",
-    match: "96%",
-    reason: "Complements your cool skin tone and penchant for timeless classic silhouettes.",
+    note: "A timeless, classic silhouette in Tahitian pearl and platinum.",
     material: "Tahitian Black Pearl, Platinum",
   },
   {
@@ -29,8 +31,7 @@ const recommendations = [
     name: "Seraphina Gold Necklace",
     price: "$3,800",
     image: "https://images.unsplash.com/photo-1625792508272-bc6ad2788b14?auto=format&w=800&q=80",
-    match: "94%",
-    reason: "Aligned with your style profile: 'Editorial Modern' and search history for statement pieces.",
+    note: "An editorial, statement-making piece in hand-crafted gold link.",
     material: "Hand-crafted 14K Gold Link",
   },
   {
@@ -38,8 +39,7 @@ const recommendations = [
     name: "Ethereal Diamond Studs",
     price: "$1,850",
     image: "https://images.pexels.com/photos/5370644/pexels-photo-5370644.jpeg?auto=compress&cs=tinysrgb&w=800",
-    match: "92%",
-    reason: "Perfect balance of daily wearability and luxury, matching your 'Understated' style filter.",
+    note: "An understated, everyday-luxury pairing of diamond and white gold.",
     material: "Round-cut Diamonds, White Gold",
   },
 ];
@@ -57,14 +57,14 @@ const AIRecommendation = () => {
             viewport={{ once: true }}
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-champagne/40 bg-champagne/5 text-[9px] uppercase tracking-[0.5em] font-bold text-champagne-800 mb-8 shadow-luxury"
           >
-            <Sparkles size={12} />
-            Your Personal AI Curator
+            <Gem size={12} />
+            Curated Edit
           </motion.div>
           <h2 className="text-6xl md:text-8xl tracking-tighter mb-8">
-            Recommended <span className="italic font-light text-champagne-800/80 underline underline-offset-16 decoration-champagne/30">for You</span>
+            Featured <span className="italic font-light text-champagne-800/80 underline underline-offset-16 decoration-champagne/30">Pieces</span>
           </h2>
           <p className="text-[11px] uppercase tracking-[0.3em] text-graphite/40 max-w-lg mx-auto leading-loose font-medium">
-            Our neural engine has meticulously analysed your style parameters to surface pieces that resonate with your current narrative.
+            A hand-picked edit from the Luma collection. For recommendations grounded in your own request, try Luma Concierge.
           </p>
         </div>
 
@@ -84,9 +84,9 @@ const AIRecommendation = () => {
                   <img src={item.image} alt={item.name} className="w-20 h-20 lg:w-28 lg:h-28 object-cover shadow-sm group-hover:scale-105 transition-transform duration-700" />
                   <div className="hidden lg:block ml-6 pr-8">
                     <p className="text-[11px] uppercase tracking-[0.2em] font-bold text-graphite mb-2 truncate w-44">{item.name}</p>
-                    <p className="text-[10px] uppercase tracking-[0.1em] text-graphite/40 font-bold flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-champagne animate-pulse" />
-                      {item.match} Match
+                    <p className="text-[10px] uppercase tracking-[0.1em] text-graphite/40 font-bold flex items-center gap-2 truncate">
+                      <span className="w-1.5 h-1.5 shrink-0 rounded-full bg-champagne" />
+                      {item.material}
                     </p>
                   </div>
                   {activeItem.id === item.id && (
@@ -121,17 +121,11 @@ const AIRecommendation = () => {
                 className="grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24"
               >
                 <div className="aspect-[4/5] bg-white hairline overflow-hidden shadow-luxury relative group ring-[20px] ring-white/50 ring-inset">
-                  <img 
-                    src={activeItem.image} 
-                    alt={activeItem.name} 
+                  <img
+                    src={activeItem.image}
+                    alt={activeItem.name}
                     className="w-full h-full object-cover transition-transform duration-[4s] group-hover:scale-110"
                   />
-                  <div className="absolute top-10 right-10">
-                    <div className="w-20 h-20 rounded-full border-2 border-dashed border-champagne/60 flex flex-col items-center justify-center bg-white/40 backdrop-blur-xl shadow-2xl">
-                      <span className="text-[10px] uppercase tracking-tighter text-graphite font-bold leading-none opacity-50">Score</span>
-                      <span className="text-2xl font-serif italic text-graphite leading-none mt-1">{activeItem.match}</span>
-                    </div>
-                  </div>
                 </div>
 
                 <div className="flex flex-col justify-center gap-10">
@@ -144,12 +138,12 @@ const AIRecommendation = () => {
                   <GlassCard className="p-8 md:p-10 bg-champagne/10 border-champagne/20 rounded-none shadow-none ring-1 ring-white/20" hover={false}>
                     <div className="flex items-start gap-6">
                       <div className="mt-1 flex-shrink-0 w-10 h-10 rounded-full bg-graphite flex items-center justify-center text-ivory border border-champagne/30">
-                        <Sparkles size={16} />
+                        <Gem size={16} />
                       </div>
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.4em] text-graphite/40 font-bold mb-3">AI Curation Note</p>
+                        <p className="text-[10px] uppercase tracking-[0.4em] text-graphite/40 font-bold mb-3">Curator's Note</p>
                         <p className="text-[13px] uppercase tracking-[0.1em] text-graphite leading-loose font-bold italic">
-                          "{activeItem.reason}"
+                          "{activeItem.note}"
                         </p>
                       </div>
                     </div>

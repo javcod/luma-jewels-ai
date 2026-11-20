@@ -1,7 +1,7 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, Sparkles, Gem, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { X, Heart, Gem, ShieldCheck } from "lucide-react";
 
-export default function ProductModal({ product, isOpen, onClose, onWishlist }) {
+export default function ProductModal({ product, isOpen, onClose, onWishlist, isWishlisted = false }) {
   if (!product) return null;
 
   return (
@@ -41,7 +41,7 @@ export default function ProductModal({ product, isOpen, onClose, onWishlist }) {
 
               <div className="flex flex-col justify-center">
                 <p className="mb-3 text-sm uppercase tracking-[0.35em] text-amber-200">
-                  AI Curated Piece
+                  Luma Collection
                 </p>
 
                 <h2 className="text-4xl font-semibold text-white md:text-5xl">
@@ -53,15 +53,6 @@ export default function ProductModal({ product, isOpen, onClose, onWishlist }) {
                 </p>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
-                  {/* Only shown when a real match value exists — never
-                      fabricated for backend Product objects (see
-                      backend/README.md, "Deliberately excluded: match/reason"). */}
-                  {(product.match || product.matchScore) && (
-                    <span className="rounded-full border border-amber-200/30 bg-amber-200/10 px-5 py-2 text-sm text-amber-100">
-                      {product.match || product.matchScore}% AI Match
-                    </span>
-                  )}
-
                   <span className="rounded-full border border-white/10 bg-white/5 px-5 py-2 text-sm text-white/70">
                     {product.metal || "Premium Finish"}
                   </span>
@@ -71,23 +62,13 @@ export default function ProductModal({ product, isOpen, onClose, onWishlist }) {
                   {product.price_display || product.price}
                 </p>
 
+                {/* Real product copy when the catalog has it; otherwise a
+                    plain, honest fallback line — never a fabricated
+                    "AI reasoning" claim (see backend/README.md, `description`
+                    is `null` for every product in the current catalog). */}
                 <p className="mt-6 leading-8 text-white/65">
-                  {product.description ||
-                    "A refined jewellery piece selected through Luma AI based on elegance, occasion, design preference, and gifting intent."}
+                  {product.description || "A refined piece from the Luma collection."}
                 </p>
-
-                <div className="mt-7 rounded-3xl border border-amber-200/15 bg-white/[0.04] p-5">
-                  <div className="mb-3 flex items-center gap-2 text-amber-200">
-                    <Sparkles size={18} />
-                    <p className="font-medium">Why Luma AI recommends this</p>
-                  </div>
-
-                  <p className="text-sm leading-7 text-white/60">
-                    This piece matches your luxury profile because it balances
-                    occasion suitability, premium design language, visual
-                    elegance, and personalised style preference.
-                  </p>
-                </div>
 
                 <div className="mt-7 grid gap-3 text-sm text-white/65">
                   <div className="flex items-center gap-3">
@@ -105,8 +86,8 @@ export default function ProductModal({ product, isOpen, onClose, onWishlist }) {
                   onClick={() => onWishlist(product)}
                   className="mt-8 flex w-full items-center justify-center gap-3 rounded-full bg-amber-200 px-7 py-4 font-semibold text-black transition hover:scale-[1.02] hover:bg-amber-100"
                 >
-                  <Heart size={19} />
-                  Add to Luma Wishlist
+                  <Heart size={19} className={isWishlisted ? "fill-black" : ""} />
+                  {isWishlisted ? "Saved to Wishlist" : "Add to Luma Wishlist"}
                 </button>
               </div>
             </div>

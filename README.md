@@ -55,14 +55,14 @@ Most "AI shopping" demos either fake the AI (static copy dressed up as a recomme
 - Honest inventory handling — the assistant states plainly when live stock status isn't known rather than guessing
 
 ### Shopping Experience
-- Live product grid fetched from the backend catalog (`GET /products`), with loading and error states
+- Live product grid fetched from the backend catalog (`GET /products`), with loading and error states, plus an honest cold-start hint if the free-tier backend is still waking up
 - Product detail modal
-- Wishlist toast feedback (local UI state — see [Known Limitations](#17-known-limitations))
-- Fully responsive, animated interface (Framer Motion / Motion, Lenis smooth scroll)
+- A real wishlist — add/remove any product, a live count badge in the nav, a dedicated wishlist panel, and persistence across page refreshes via `localStorage` (see [Known Limitations](#17-known-limitations) for what this is *not* — there's no account or server-side sync)
+- Fully responsive, animated interface (Motion, Lenis smooth scroll)
 - Curated collection showcase, trust and testimonial sections
 
 ### Personalization
-- **Style Quiz** — a four-question flow (occasion, style, metal tone, budget) that produces a "Style Aura" profile and a best-match suggestion, computed client-side by rule-based logic (see [Known Limitations](#17-known-limitations) — this flow is independent of the Gemini-backed Concierge)
+- **Style Quiz** — a four-question flow (occasion, style, metal tone, budget) that produces a "Style Aura" profile and a best-match suggestion, computed client-side by deterministic rule-based logic. The UI is explicit that this is separate from Luma Concierge — no LLM is involved in the quiz (see [Known Limitations](#17-known-limitations))
 
 ## 5. AI / Agent Architecture
 
@@ -137,14 +137,14 @@ The frontend and backend deploy and scale **independently** — Vercel never tal
 |---|---|
 | Frontend | React 19, Vite 8 |
 | Styling | Tailwind CSS v4 |
-| Animation | Framer Motion / Motion, Lenis (smooth scroll) |
+| Animation | Motion, Lenis (smooth scroll) |
 | Icons | lucide-react |
 | Backend | Python 3.11+, FastAPI |
 | Data validation | Pydantic v2, pydantic-settings |
 | AI provider | Google Gemini (`google-genai` SDK), plus a deterministic fake provider for dev/tests |
 | Agent layer | Custom explicit orchestrator (no LangGraph/LangChain) |
 | API style | REST (JSON) |
-| Testing | Pytest + httpx (backend, 119 tests); ESLint (frontend) |
+| Testing | Pytest + httpx (backend, 119 tests); Vitest + React Testing Library (frontend, 17 tests); ESLint (frontend, 0 errors) |
 | Deployment | Vercel (frontend) + Render (backend, via `render.yaml` Blueprint) |
 
 ## 9. Project Structure
@@ -154,10 +154,12 @@ luma-jewels-ai/
 ├── src/                          # React/Vite frontend
 │   ├── components/
 │   │   ├── Concierge/LumaConcierge.jsx   # AI chat panel — the only real-time AI surface
+│   │   ├── Wishlist/WishlistPanel.jsx    # Real wishlist view (client-side, see hooks/useWishlist.js)
 │   │   ├── sections/                     # Hero, CollectionGrid, AIRecommendation, StyleQuiz, ...
 │   │   └── ui/                           # Button, ProductCard, GlassCard, ...
-│   ├── data/products.js         # Original static catalog (superseded by the backend for the live grid)
+│   ├── hooks/useWishlist.js     # Wishlist state + localStorage persistence — no backend, by design
 │   ├── lib/api.js               # Minimal fetch client for the backend (GET /products, POST /concierge/chat)
+│   ├── test/setup.js            # Vitest/jest-dom setup
 │   └── App.jsx                  # Wires sections together; fetches the live catalog on mount
 ├── backend/
 │   ├── app/
@@ -281,7 +283,14 @@ pytest
 
 A `conftest.py` safety net forces `LLM_PROVIDER=fake` for the entire test session regardless of what `backend/.env` contains, so the suite can never accidentally consume real Gemini quota. No test requires internet access, a real API key, or a database.
 
-Frontend: `npm run lint` (ESLint) and `npm run build` (production Vite build) — no dedicated frontend test suite exists in this repository today.
+**Frontend:**
+```bash
+npm run lint   # ESLint — 0 errors
+npm test       # Vitest — 17 tests
+npm run build  # production Vite build
+```
+
+The frontend suite is deliberately small and targeted rather than a full component-by-component suite — it covers the three areas most worth an automated guarantee: `src/lib/api.js` (the fetch client's request-building and error-handling contract, mocking `fetch` directly), `src/hooks/useWishlist.js` (add/remove/toggle logic and `localStorage` persistence across a simulated remount), and `LumaConcierge.jsx` (a real send → response interaction, and that a failed backend call renders a friendly message — never the raw error — with a working retry). Full-page tests that mount the entire homepage were deliberately avoided: several marketing sections use `whileInView` (Motion) and Lenis smooth-scroll, which need browser APIs (`IntersectionObserver`, etc.) that add real setup cost for very little additional confidence over the targeted tests above.
 
 ## 15. Reliability & Error Handling
 
@@ -306,16 +315,16 @@ Frontend: `npm run lint` (ESLint) and `npm run build` (production Vite build) �
 - **Render free-tier cold start.** The backend spins down after inactivity; the first request afterward can take 30–60 seconds while the instance wakes up.
 - **No live inventory tracking.** Every product's stock status is unknown in the current catalog — `check_inventory` always reports `"status": "unknown"`, and the Concierge is instructed to say so plainly rather than guess.
 - **No persistent conversation memory.** Each `/concierge/chat` call is a fresh, isolated turn — there is no memory of earlier messages across requests.
-- **No cart, checkout, wishlist persistence, or authentication.** The wishlist toast is local UI feedback only; nothing is saved server-side. Concierge is strictly read-only by design.
-- **Three homepage sections predate the backend integration and are not yet wired to it:** the category collection tiles, the "Recommended for You" showcase, and the Style Quiz's "Aura" profile all use static or client-side rule-based logic rather than the live catalog or Gemini. Only the main product grid (`GET /products`) and the Luma Concierge chat panel (`POST /concierge/chat`) call the real backend today — see [Roadmap](#18-future-roadmap).
+- **The wishlist is real but local-only.** It's a genuine add/remove list that survives a page refresh (`localStorage`), but it's scoped to one browser on one device — there's no account, no server-side storage, and no sync across devices. No cart, checkout, or authentication exists.
+- **Three homepage sections predate the backend integration and are not wired to it:** the category collection tiles, the "Recommended for You" showcase, and the Style Quiz's "Aura" profile all use static or client-side deterministic logic rather than the live catalog or Gemini — and are labeled as such in the UI (see "How the Style Quiz Works" and "Two Kinds of Personalization" on the homepage). Only the main product grid (`GET /products`) and the Luma Concierge chat panel (`POST /concierge/chat`) call the real backend today — see [Roadmap](#18-future-roadmap).
 
 ## 18. Future Roadmap
 
 - Wire the remaining static sections (collection tiles, "Recommended for You," Style Quiz) to the real catalog and/or the Concierge agent
 - Add real inventory data so `check_inventory` can return a genuine in-stock/out-of-stock status
 - Persistent conversation memory across Concierge turns
-- Cart, checkout, and wishlist persistence with a real backend
-- Authentication
+- Account-based wishlist sync (currently `localStorage`-only, by design — see [Known Limitations](#17-known-limitations))
+- Cart, checkout, and authentication
 - Additional LLM provider options (the abstraction already supports adding one more `app/llm/` file + one `factory.py` branch)
 
 ## 19. Screenshots / Demo

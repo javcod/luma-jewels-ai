@@ -1,5 +1,3 @@
-import React from "react";
-import { motion } from "motion/react";
 import { Mail, Globe, Sparkles, ArrowUp } from "lucide-react";
 
 const Footer = () => {
