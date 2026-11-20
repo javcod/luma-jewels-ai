@@ -12,6 +12,12 @@ A jewellery e-commerce app with an AI shopping assistant that only recommends pr
 
 > The backend runs on Render's free tier. The first request after a period of inactivity can take 30-60 seconds while it wakes up.
 
+## Screenshots
+
+| Home | Wishlist |
+| --- | --- |
+| ![Home page](docs/screenshots/home.png) | ![Wishlist panel](docs/screenshots/wishlist.png) |
+
 ## Features
 
 - **Luma Concierge**: chat assistant for product discovery ("rings under $5,000", "help me choose a gift"), with filtering by budget, metal, gemstone and category, plus side-by-side comparison
