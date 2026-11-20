@@ -1,20 +1,17 @@
+Set-Content -Encoding ascii .gitignore @'
 node_modules
 dist
 .env
 .env.local
 .DS_Store
 
-# Local design-tool state (Kombai canvas) — not used by the app or its
-# build, and not meant to be shared/tracked.
-.kombai/
-
-# Python backend (see backend/.gitignore for the full set)
-backend/__pycache__/
-backend/**/__pycache__/
+# Python
+__pycache__/
 *.pyc
 .pytest_cache/
 .venv/
-backend/.venv/
 
+# Local editor and tool folders
 .claude/
 .kombai/
+'@
