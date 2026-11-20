@@ -139,8 +139,7 @@ def test_check_inventory_reports_unknown_status_for_existing_product():
 
 
 def test_check_inventory_never_reports_in_stock_or_out_of_stock_for_null_data():
-    # All 6 catalog products currently have in_stock = null — this asserts
-    # that stays true for the whole catalog, not just product 1.
+    # No product has stock data yet
     for product_id in range(1, 7):
         result = check_inventory(id=product_id)
         assert result["status"] == "unknown"

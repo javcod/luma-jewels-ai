@@ -177,8 +177,7 @@ def test_unexpected_exception_is_wrapped_as_provider_error():
 
 
 def test_client_error_is_not_retried(monkeypatch):
-    # A 4xx (e.g. bad API key) is never retryable — retrying would just
-    # return the same error, so it must fail on the very first attempt.
+    # 4xx errors should fail on the first attempt
     sleep_calls = []
     monkeypatch.setattr("app.llm.gemini_provider.time.sleep", lambda s: sleep_calls.append(s))
 
@@ -235,19 +234,9 @@ def test_server_error_raises_after_exhausting_retries(monkeypatch):
 
 # --- Factory selection (app.llm.factory.get_llm_provider) -------------------
 #
-# NOTE 1: constructing a real `genai.Client(...)` was measured to take ~1s
-# even with a fake key (it appears to do some I/O at construction time, not
-# just at call time) — so `genai.Client` itself is patched here rather than
-# letting the "gemini" branch construct a real one, keeping this fully
-# network-free per the task's requirement.
-#
-# NOTE 2: every test here explicitly sets LLM_API_KEY to a harmless dummy
-# value via monkeypatch, even the ones that don't need it. This is
-# deliberate: env vars override a real backend/.env file, but simply NOT
-# setting one does not — pydantic-settings would still read whatever real
-# key is on disk into the Settings object. Explicitly overriding it
-# guarantees the real key is never loaded into memory during this test
-# file's run, regardless of what backend/.env contains at test time.
+# Factory tests. genai.Client is patched because creating a real client is
+# slow. LLM_API_KEY is always set to a dummy value so a real key in a local
+# .env is never loaded.
 
 
 def test_factory_selects_fake_provider(monkeypatch):

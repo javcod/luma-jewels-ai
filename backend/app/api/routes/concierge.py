@@ -1,12 +1,6 @@
 """Luma Concierge chat endpoint.
 
-Thin HTTP layer only: validates the request, runs the agent orchestrator,
-and shapes the response. All reasoning/tool-selection lives in
-`app.agents`; all catalog access lives in `app.services` (via `app.tools`).
-
-The LLM provider is a FastAPI dependency (rather than constructed inline)
-specifically so tests can override it — see `tests/test_concierge_api.py`
-for the provider-failure test this enables.
+The LLM provider is injected as a FastAPI dependency so tests can override it.
 """
 
 from fastapi import APIRouter, Depends

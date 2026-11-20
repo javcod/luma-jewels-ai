@@ -1,10 +1,4 @@
-"""Explicit state for one Luma Concierge agent run.
-
-Deliberately minimal: this represents a single request/response cycle, not
-persistent multi-turn memory (no database, no session store — that's a
-future phase, if ever needed). Everything here lives in memory for the
-lifetime of one `run_concierge()` call.
-"""
+"""State for a single Luma Concierge request. Nothing is persisted between requests."""
 
 from typing import Any, Optional
 
@@ -23,12 +17,7 @@ class ToolResult(BaseModel):
 
 
 class TraceEvent(BaseModel):
-    """One user-safe activity event for the execution trace.
-
-    Deliberately high-level ("Searching the catalog") — never the model's
-    reasoning text, a prompt, or raw provider internals. Safe to render
-    directly in a future frontend.
-    """
+    """A short, user-facing step such as "Searching the catalog"."""
 
     type: str = "activity"
     label: str
@@ -38,27 +27,19 @@ class TraceEvent(BaseModel):
 class ConciergeState(BaseModel):
     user_message: str
 
-    # Full conversation sent to/received from the LLM provider, including
-    # tool-result turns — this is what makes the loop in orchestrator.py
-    # stateful across reasoning steps.
+    # Conversation sent to the provider, including tool results
     messages: list[ChatMessage] = Field(default_factory=list)
 
-    # Every tool call the agent made this run, and what each one returned.
     tool_calls: list[ToolCall] = Field(default_factory=list)
     tool_results: list[ToolResult] = Field(default_factory=list)
 
-    # The filters actually used for the most recent search_products call,
-    # if any — echoed back in the API response as transparent, non-fabricated
-    # grounding for why these products were recommended.
+    # Filters from the latest search, returned to the client
     applied_filters: Optional[dict[str, Any]] = None
 
-    # Real, validated Product records returned by a tool this run. Never
-    # populated from anything the LLM said directly — only from tool output.
+    # Filled only from tool output
     recommended_products: list[Product] = Field(default_factory=list)
 
     final_response: Optional[str] = None
     iterations: int = 0
 
-    # High-level, user-safe activity trace — see TraceEvent. Never contains
-    # prompts, raw model output, or provider internals.
     trace: list[TraceEvent] = Field(default_factory=list)

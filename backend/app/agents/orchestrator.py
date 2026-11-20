@@ -1,28 +1,11 @@
-"""Luma Concierge agent orchestration.
+"""Agent loop for Luma Concierge.
 
-Implements the agent loop explicitly:
+    ask the LLM what to do next
+      -> no tool call: return its message
+      -> tool call(s): run them, add the results to the conversation, repeat
 
-    START
-      -> agent_reasoning   (ask the LLM provider what to do next)
-      -> tool_required?
-           NO  -> final_response -> END
-           YES -> validate/execute_tool -> agent_reasoning (loop, bounded) -> ...
-
-Why not LangGraph: this phase's loop has one decision point and a small,
-fixed tool set — an explicit Python loop expresses the same state machine
-with no added dependency, and keeps the whole flow readable in one file.
-Adopting LangGraph is a reasonable future step once the graph gets more
-branches (e.g. multi-agent, parallel tools) — flagged explicitly as a
-decision for review in backend/README.md, not adopted here just because
-it's the eventual target stack.
-
-This module owns orchestration ONLY:
-- it never reads the product catalog directly (that's `app.tools` ->
-  `app.services.product_service`, except for one narrow, read-only lookup
-  used to attach full product records to a comparison result — see
-  `_update_recommendations`), and
-- it never talks to a specific LLM vendor (that's `app.llm`, injected here
-  only through the `LLMProvider` interface).
+The loop is capped at MAX_TOOL_ITERATIONS. It talks to the LLM only through
+the LLMProvider interface and to the catalog only through the tools.
 """
 
 import json
@@ -37,9 +20,7 @@ from app.tools.product_tools import AVAILABLE_TOOLS, TOOL_EXECUTORS
 
 logger = logging.getLogger("lumajewel.agent")
 
-# A sensible bound on tool-calling rounds. The fake provider never needs
-# more than one, but a real LLM provider could in principle keep requesting
-# tools indefinitely — this guarantees the loop always terminates.
+# Stops a model that keeps requesting tools from looping forever
 MAX_TOOL_ITERATIONS = 3
 
 _FALLBACK_MESSAGE = "I'm not sure how to help with that yet."
@@ -59,9 +40,7 @@ _TRACE_LABELS = {
 
 
 def run_concierge(user_message: str, provider: LLMProvider) -> ConciergeState:
-    """Run one full agent turn for `user_message` and return the resulting
-    state (final_response, any recommended_products, and a full trace of
-    what tools were called)."""
+    """Run one agent turn and return the final state."""
     state = ConciergeState(user_message=user_message)
     state.messages.append(ChatMessage(role="system", content=SYSTEM_PROMPT))
     state.messages.append(ChatMessage(role="user", content=user_message))
@@ -71,7 +50,7 @@ def run_concierge(user_message: str, provider: LLMProvider) -> ConciergeState:
         response = _agent_reasoning(state, provider)
 
         if response is None:
-            # A provider failure already set state.final_response.
+            # Provider failed; final_response is already set
             break
 
         if not response.tool_calls:
@@ -94,9 +73,7 @@ def run_concierge(user_message: str, provider: LLMProvider) -> ConciergeState:
 
 
 def _agent_reasoning(state: ConciergeState, provider: LLMProvider) -> LLMResponse | None:
-    """Call the provider for the next reasoning step. Returns None (with
-    state.final_response already set) if the provider itself fails — a
-    provider error must never crash the request."""
+    """Ask the provider for the next step. Returns None if the provider fails."""
     try:
         response = provider.generate(messages=state.messages, tools=AVAILABLE_TOOLS)
     except Exception:
@@ -138,8 +115,7 @@ def _execute_tool(state: ConciergeState, tool_call: ToolCall) -> None:
 
 
 def _update_recommendations(state: ConciergeState, tool_call: ToolCall, result: dict) -> None:
-    """Populate recommended_products/applied_filters strictly from real,
-    validated tool output — never from anything the LLM said."""
+    """Set recommended products from tool output only, never from the model's text."""
     if tool_call.name in ("search_products", "filter_products") and "items" in result:
         state.recommended_products = [Product(**item) for item in result["items"]]
         state.applied_filters = {k: v for k, v in tool_call.arguments.items() if v is not None}
@@ -148,13 +124,7 @@ def _update_recommendations(state: ConciergeState, tool_call: ToolCall, result: 
         state.recommended_products = [Product(**result["item"])]
 
     elif tool_call.name == "compare_products" and result.get("compared"):
-        # compare_products intentionally returns a partial field set (see
-        # app/tools/product_tools.py); fetch the full, authoritative record
-        # for each compared id rather than reconstructing a Product from a
-        # partial dict.
+        # compare_products returns only some fields, so load the full records
         ids = [item["id"] for item in result["compared"]]
         products = [product_service.get_product_by_id(product_id) for product_id in ids]
         state.recommended_products = [p for p in products if p is not None]
-
-    # check_inventory does not change recommended_products — it's an
-    # availability check, not a source of new recommendations.

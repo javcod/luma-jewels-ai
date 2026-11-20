@@ -1,9 +1,4 @@
-"""Health check endpoint.
-
-Used for local verification, frontend connectivity testing, and future
-deployment health checks. Deliberately has no dependencies on any
-not-yet-implemented subsystem (agent, LLM provider, database, etc.).
-"""
+"""Health check endpoint, also used by Render."""
 
 from fastapi import APIRouter
 from pydantic import BaseModel

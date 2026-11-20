@@ -1,13 +1,4 @@
-"""System instruction for the Luma Concierge agent.
-
-Kept separate from orchestration logic so the persona/behavior rules can be
-reviewed or tuned independently of control flow. This text is passed as
-the system message to whichever `LLMProvider` is configured.
-
-Note: `FakeLLMProvider` does not literally parse this text — it's a
-deterministic rule-based stand-in, not a language model. `GeminiProvider`
-(Phase 4) sends this verbatim as the model's system instruction.
-"""
+"""System prompt for the Luma Concierge agent."""
 
 SYSTEM_PROMPT = """You are Luma Concierge, a jewelry shopping assistant for LumaJewel.
 

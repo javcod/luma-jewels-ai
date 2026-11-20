@@ -58,8 +58,7 @@ def test_detects_category_and_price_filters():
     assert call.name == "search_products"
     assert call.arguments["category"] == "Rings"
     assert call.arguments["max_price"] == 500.0
-    # Plain "gold" is deliberately not mapped to a metal filter (ambiguous
-    # across multiple exact catalog values) — see fake_provider.py.
+    # Plain "gold" is ambiguous in the catalog, so no metal filter is applied
     assert "metal" not in call.arguments
 
 

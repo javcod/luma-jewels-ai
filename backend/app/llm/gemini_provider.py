@@ -1,17 +1,7 @@
 """Gemini implementation of LLMProvider.
 
-All `google.genai` SDK usage is isolated to this file — nothing outside
-`app/llm/` imports it, and nothing outside this file constructs or reads a
-`google.genai.types.*` object. Everything is converted to/from our
-provider-agnostic `ChatMessage` / `ToolDefinition` / `ToolCall` /
-`LLMResponse` types (see `app.llm.base`) at the boundary, so
-`app.agents.orchestrator` never knows Gemini exists.
-
-The exact SDK shapes used here (`Tool.functionDeclarations`,
-`FunctionDeclaration.parametersJsonSchema`, `GenerateContentConfig`,
-`Part.from_function_response`, `response.function_calls`/`.text`, and the
-`errors.APIError` hierarchy) were confirmed against the installed
-`google-genai` package via introspection rather than assumed from memory.
+Converts between our provider-neutral types (app.llm.base) and the
+google-genai SDK types, so the rest of the app never touches the SDK.
 """
 
 import json
@@ -29,29 +19,18 @@ logger = logging.getLogger("lumajewel.llm.gemini")
 
 DEFAULT_MODEL = "gemini-2.5-flash"
 
-# `errors.ServerError` (5xx, e.g. the transient "model is currently
-# experiencing high demand" 503) is retried a couple of times with a short
-# backoff before giving up — confirmed via direct reproduction that the
-# exact same request/conversation succeeds on a later attempt, so this is
-# upstream capacity flakiness, not a malformed request. `errors.ClientError`
-# (4xx, e.g. bad API key, invalid request) is never retried — retrying an
-# invalid request just wastes time before returning the same error.
+# 5xx errors (e.g. a 503 under high demand) are usually temporary, so they
+# are retried. 4xx errors (bad key, invalid request) fail immediately.
 _MAX_ATTEMPTS = 3
 _RETRY_BACKOFF_SECONDS = 1.5
 
 
 class GeminiProviderError(Exception):
-    """Raised for any Gemini configuration or call failure (missing key,
-    timeout, API error, malformed response). Caught by
-    `app.agents.orchestrator`, which turns it into a graceful user-facing
-    message — a raw SDK exception/stack trace never reaches the API layer."""
+    """Raised for any Gemini configuration or API failure."""
 
 
 class GeminiProvider(LLMProvider):
-    """See module docstring. Accepts an optional pre-built `client` purely
-    for testability (unit tests inject a mock instead of hitting the real
-    network) — production code always lets it construct a real
-    `genai.Client` from `api_key`."""
+    """`client` can be passed in to use a mock in tests."""
 
     def __init__(self, api_key: Optional[str], model: str, client: Optional[genai.Client] = None):
         if client is not None:
@@ -81,10 +60,7 @@ class GeminiProvider(LLMProvider):
                     config=config,
                 )
             except errors.ServerError as exc:
-                # Transient upstream failure (e.g. 503 "high demand") — the
-                # request itself is fine, so a short retry is safe and
-                # usually succeeds (this is a read-only generation call, not
-                # a mutation, so re-sending it has no side effects).
+                # Temporary server error; retrying a generation request is safe
                 if attempt < _MAX_ATTEMPTS:
                     logger.warning(
                         "Gemini ServerError on attempt %d/%d, retrying in %.1fs: %s",
@@ -98,9 +74,7 @@ class GeminiProvider(LLMProvider):
                 logger.exception("Gemini API error (exhausted retries)")
                 raise GeminiProviderError(f"Gemini API error: {exc}") from exc
             except errors.APIError as exc:
-                # ClientError (e.g. invalid/missing API key, bad request) and
-                # any other non-retryable APIError — retrying would just
-                # return the same error, so fail immediately.
+                # Client errors will not succeed on retry
                 logger.exception("Gemini API error")
                 raise GeminiProviderError(f"Gemini API error: {exc}") from exc
             except Exception as exc:  # noqa: BLE001 - any other SDK/transport failure
@@ -119,8 +93,7 @@ def _to_gemini_contents(messages: list[ChatMessage]) -> tuple[Optional[str], lis
 
     for message in messages:
         if message.role == "system":
-            # Gemini takes one system_instruction string, not per-turn
-            # system messages — concatenate in the rare case of more than one.
+            # Gemini accepts a single system instruction, so join them
             system_instruction = (
                 f"{system_instruction}\n{message.content}" if system_instruction else message.content
             )
@@ -182,8 +155,7 @@ def _from_gemini_response(response: types.GenerateContentResponse) -> LLMRespons
             )
             for call in function_calls
         ]
-        # Reject a malformed call up front (no tool name) rather than
-        # letting an empty tool name reach the orchestrator's tool lookup.
+        # Skip malformed calls without a tool name
         if any(not call.name for call in tool_calls):
             raise GeminiProviderError("Gemini returned a malformed tool call with no function name.")
         return LLMResponse(tool_calls=tool_calls)

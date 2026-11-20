@@ -1,11 +1,6 @@
-"""Centralized application configuration.
+"""Application settings loaded from environment variables or a local .env file.
 
-All environment-derived settings live here so the rest of the backend never
-reads `os.environ` directly. Values are loaded from process environment
-variables (and a local `.env` file in development, via python-dotenv support
-built into pydantic-settings) with safe defaults for local development.
-
-No secrets are hardcoded here. See `.env.example` for the supported keys.
+See .env.example for the supported keys.
 """
 
 from functools import lru_cache
@@ -15,11 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Application settings, populated from environment variables.
-
-    Field names map to env vars of the same name (case-insensitive), e.g.
-    `BACKEND_PORT` -> `backend_port`.
-    """
+    """Field names map to env vars case-insensitively (BACKEND_PORT -> backend_port)."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -35,25 +26,17 @@ class Settings(BaseSettings):
     backend_host: str = "0.0.0.0"
     backend_port: int = 8000
 
-    # CORS — comma-separated list of allowed origins for local development.
-    # The Vite dev server defaults to http://localhost:5173.
+    # Comma-separated list of allowed CORS origins
     frontend_origin: str = "http://localhost:5173"
 
-    # LLM provider — provider-agnostic on purpose (see app/llm/base.py).
-    # "fake" is the only provider implemented so far: a deterministic,
-    # rule-based stand-in that needs no network access or API key. It is
-    # both the default and what the automated test suite uses.
+    # "fake" (default, no API key needed) or "gemini"
     llm_provider: str = "fake"
     llm_model: str = ""
     llm_api_key: Optional[str] = None
 
     @property
     def cors_origins(self) -> list[str]:
-        """Parse `frontend_origin` into a list of allowed CORS origins.
-
-        Supports a single origin or a comma-separated list, so multiple
-        local dev ports/hosts can be allowed without code changes.
-        """
+        """Split `frontend_origin` into a list of origins."""
         return [origin.strip() for origin in self.frontend_origin.split(",") if origin.strip()]
 
     @property
@@ -63,5 +46,5 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    """Return a cached Settings instance (read once per process)."""
+    """Return a cached Settings instance."""
     return Settings()

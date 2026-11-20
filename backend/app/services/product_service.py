@@ -1,18 +1,4 @@
-"""Product repository/service.
-
-Responsible for loading the canonical product catalog from
-`app/data/products.json` and providing deterministic, read-only access to
-it. No HTTP concerns here — that belongs in `app.api.routes.products`.
-
-This module is the capability the future Luma Concierge agent tools
-(`search_products`, `filter_products`, `get_product`, ...) will call into.
-Keeping it free of HTTP/agent/LLM concerns now means those later phases can
-depend on it directly without refactoring it.
-
-Everything here is deterministic: the same arguments against the same
-catalog file always produce the same result. No network calls, no
-randomness, no LLM.
-"""
+"""Read-only access to the product catalog in app/data/products.json."""
 
 import json
 from functools import lru_cache
@@ -26,12 +12,7 @@ _CATALOG_PATH = Path(__file__).resolve().parent.parent / "data" / "products.json
 
 @lru_cache
 def _load_catalog() -> tuple[Product, ...]:
-    """Load and validate the canonical catalog once per process.
-
-    Returns a tuple (not a list) so the cached value is effectively
-    immutable — callers get their own list copies via the public functions
-    below rather than being able to mutate the shared cache.
-    """
+    """Load and validate the catalog once. A tuple keeps the cached value immutable."""
     raw = json.loads(_CATALOG_PATH.read_text(encoding="utf-8"))
     return tuple(Product(**item) for item in raw)
 
@@ -43,12 +24,10 @@ def get_all_products(
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
 ) -> list[Product]:
-    """Return catalog products, optionally filtered.
+    """Return products matching all given filters.
 
-    Filters are combined with AND. Matching is exact and case-insensitive
-    for `category`/`metal`/`gemstone` — deliberately not fuzzy/partial, to
-    keep results deterministic and easy to reason about as an agent tool
-    contract. `min_price`/`max_price` are inclusive bounds on `price_value`.
+    category, metal and gemstone are exact, case-insensitive matches.
+    min_price and max_price are inclusive.
     """
     products = list(_load_catalog())
 

@@ -1,10 +1,4 @@
-"""Security sanity checks.
-
-These are automatable checks only. The full picture (nothing tracked by
-git, .env never committed) is verified separately via `git status
---ignored` as part of manual/CI verification — see backend/README.md,
-"Security model", and the Phase 4 implementation report.
-"""
+"""Checks that no real API key is stored in config or example files."""
 
 import re
 from pathlib import Path
@@ -13,9 +7,7 @@ from app.core.config import Settings
 
 _BACKEND_ROOT = Path(__file__).resolve().parent.parent
 
-# Loosely matches common LLM provider API key shapes (Google "AIza...",
-# OpenAI "sk-...", Anthropic "sk-ant-...") — good enough to catch an
-# accidentally-pasted real key without being a full secret scanner.
+# Common API key formats (Google, OpenAI, Anthropic)
 _LOOKS_LIKE_REAL_KEY = re.compile(r"(AIza[0-9A-Za-z_\-]{20,}|sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9\-]{20,})")
 
 

@@ -1,25 +1,8 @@
-"""Deterministic, rule-based LLM provider.
+"""Deterministic stand-in for an LLM, used in tests and local development.
 
-This is NOT a real language model. It is a stand-in that implements the
-same `LLMProvider` interface a real provider would, so:
-
-- the agent orchestration code (`app.agents.orchestrator`) never needs to
-  know whether it's talking to a real LLM or this fake one, and
-- the entire test suite can exercise the full agent/tool-calling loop
-  deterministically, with no network access, no API key, and no cost.
-
-It remains available and is the default provider (`LLM_PROVIDER=fake`)
-alongside the real `GeminiProvider` (Phase 4) — see backend/README.md.
-
-Design note: the heuristics below (keyword/regex matching on the user's
-raw text) are intentionally simple and live ONLY here, behind the
-`LLMProvider` interface. This is different from the architectural rule
-"the real model must decide tool calls, not regex/keyword matching in
-application code" (Phase 4, Part 2) — that rule is about the REAL provider
-path (`GeminiProvider`), which lets the actual model decide. A *fake
-provider* standing in for the LLM is expected to approximate what an LLM
-would decide, deterministically, so tests are repeatable. Nothing in
-`app.agents` or `app.tools` performs this kind of matching.
+It picks tools with simple keyword and regex rules so the agent loop can be
+tested without network access or an API key. In production, GeminiProvider
+lets the real model decide which tool to call.
 """
 
 import json
@@ -28,11 +11,8 @@ from typing import Optional
 
 from app.llm.base import ChatMessage, LLMProvider, LLMResponse, ToolCall, ToolDefinition
 
-# Catalog metal values that can be inferred unambiguously from user text.
-# Plain "gold" is deliberately excluded: the catalog has multiple distinct
-# gold variants ("18K Gold", "14K Gold", "18K Yellow Gold") and the product
-# service's metal filter is an exact match — guessing wrong would silently
-# return zero results. Better to under-filter than to mis-filter.
+# Only metals that can be matched unambiguously. Plain "gold" is skipped
+# because the catalog has several gold variants and the filter is exact.
 _METAL_KEYWORDS: dict[str, str] = {
     "white gold": "White Gold",
     "yellow gold": "18K Yellow Gold",
@@ -82,7 +62,7 @@ def _last_tool_message(messages: list[ChatMessage]) -> Optional[ChatMessage]:
 
 
 class FakeLLMProvider(LLMProvider):
-    """See module docstring."""
+    """Rule-based provider that mimics tool-calling decisions."""
 
     def generate(self, messages: list[ChatMessage], tools: list[ToolDefinition]) -> LLMResponse:
         tool_message = _last_tool_message(messages)
@@ -167,9 +147,8 @@ class FakeLLMProvider(LLMProvider):
                 )
             )
 
-        # "Hard constraint" phrasing routes to filter_products; everything
-        # else routes to search_products. Both call the identical
-        # deterministic query — see app/tools/product_tools.py.
+        # "Hard constraint" wording uses filter_products, everything else uses
+        # search_products (both run the same query).
         tool_name = "filter_products" if any(k in lowered for k in _HARD_CONSTRAINT_KEYWORDS) else "search_products"
         return LLMResponse(tool_calls=[ToolCall(id="call_1", name=tool_name, arguments=filters)])
 
@@ -190,8 +169,7 @@ class FakeLLMProvider(LLMProvider):
         }.get(tool_message.name)
 
         if formatter is None:
-            # Unknown tool name (e.g. the orchestrator reported an unknown
-            # tool) — data is a generic {"error": "..."} dict in that case.
+            # Unknown tool: data is an {"error": ...} dict
             error = data.get("error", "an unexpected issue occurred.")
             return LLMResponse(message=f"I ran into an issue looking that up: {error}")
 

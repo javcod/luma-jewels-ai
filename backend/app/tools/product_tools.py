@@ -1,21 +1,9 @@
-"""Product tools available to the Concierge agent.
+"""The five read-only tools the Concierge agent can call.
 
-The five V1 read-only tools: search_products, filter_products, get_product,
-compare_products, check_inventory. Every one of them delegates to
-`app.services.product_service` — the same deterministic catalog service the
-`/products` HTTP API uses. No catalog retrieval or filtering logic is
-duplicated anywhere in this module.
-
-`filter_products` intentionally reuses `search_products`'s own executor
-rather than calling `product_service` a second, separate way — they exist
-as two distinct tool *names* so the agent can express "hard constraint"
-intent separately from "open browse" intent, but the underlying query is
-identical.
-
-Tool executors never raise for "expected" failure cases (missing/invalid
-id, no matches, unknown inventory) — they return a structured result the
-agent can reason about. Unexpected exceptions are still handled, but by the
-orchestrator, not here.
+All of them delegate to app.services.product_service. filter_products runs
+the same query as search_products; it exists as a separate name so the model
+can signal strict filtering. Expected failures (bad id, no match) return a
+structured result instead of raising.
 """
 
 from typing import Any, Optional
@@ -119,8 +107,7 @@ def search_products(
     max_price: Optional[float] = None,
     **_ignored: Any,
 ) -> dict[str, Any]:
-    """Search the catalog. Extra/unexpected kwargs are ignored rather than
-    raising, since a real LLM may occasionally include a stray argument."""
+    """Search the catalog. Unknown arguments are ignored."""
     products = product_service.get_all_products(
         category=category,
         metal=metal,
@@ -132,14 +119,12 @@ def search_products(
 
 
 def filter_products(**kwargs: Any) -> dict[str, Any]:
-    """Same deterministic query as search_products — see module docstring
-    for why this is a thin alias rather than a second implementation."""
+    """Alias of search_products (see module docstring)."""
     return search_products(**kwargs)
 
 
 def get_product(id: Any = None, **_ignored: Any) -> dict[str, Any]:  # noqa: A002 - matches tool schema field name
-    """Retrieve one product by id. Returns a structured 'not found'/'invalid'
-    result rather than raising, so the agent can respond gracefully."""
+    """Get one product by id, returning a not-found result instead of raising."""
     if id is None:
         return {"found": False, "error": "Missing required argument 'id'."}
 
@@ -156,8 +141,7 @@ def get_product(id: Any = None, **_ignored: Any) -> dict[str, Any]:  # noqa: A00
 
 
 def compare_products(ids: Any = None, **_ignored: Any) -> dict[str, Any]:
-    """Return structured facts for each valid id; invalid/missing ids are
-    reported separately rather than failing the whole comparison."""
+    """Compare products by id; invalid ids are listed separately."""
     if not ids:
         return {"compared": [], "not_found": [], "error": "No product ids were provided to compare."}
 
@@ -193,10 +177,8 @@ def compare_products(ids: Any = None, **_ignored: Any) -> dict[str, Any]:
 
 
 def check_inventory(id: Any = None, **_ignored: Any) -> dict[str, Any]:  # noqa: A002
-    """Report inventory status. Every product's `in_stock` is currently
-    `null` in the catalog, so this always reports 'unknown' today — it is
-    written to also handle a real True/False value correctly if/when
-    inventory data is ever added, without needing to change the contract."""
+    """Report stock status. The catalog has no stock data yet, so this returns
+    "unknown"; True/False values are already handled."""
     if id is None:
         return {"status": "error", "product_id": None, "message": "Missing required argument 'id'."}
 

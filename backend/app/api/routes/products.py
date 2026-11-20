@@ -1,10 +1,4 @@
-"""Product catalog endpoints.
-
-Deterministic, read-only HTTP access to the canonical product catalog via
-`app.services.product_service`. This route module has no business logic of
-its own — it validates HTTP input, delegates to the service, and shapes the
-HTTP response. No agent, no LLM.
-"""
+"""Product catalog endpoints."""
 
 from typing import Optional
 

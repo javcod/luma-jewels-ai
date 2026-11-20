@@ -1,10 +1,6 @@
-"""Selects and constructs the configured LLM provider.
+"""Create the LLM provider selected by the LLM_PROVIDER setting.
 
-This is the single place that reads `settings.llm_provider` — nothing else
-in the codebase should branch on provider name. Provider-specific modules
-are imported lazily (inside each branch) so that, e.g., running with
-`LLM_PROVIDER=fake` never requires the `google-genai` package to even be
-importable, and vice versa — the two providers are fully decoupled.
+Imports are inside each branch so the Gemini SDK is only loaded when needed.
 """
 
 from app.core.config import get_settings

@@ -1,10 +1,4 @@
-"""FastAPI application entry point.
-
-This module only wires together configuration, middleware, error handling,
-and routers. No business logic lives here (see ARCHITECTURAL RULES: no
-logic in main.py) — that belongs in `app.services`, `app.agents`,
-`app.tools`, and `app.llm` in later phases.
-"""
+"""FastAPI application setup: middleware, error handling and routers."""
 
 import logging
 
@@ -19,17 +13,13 @@ logger = logging.getLogger("lumajewel.backend")
 
 
 def create_app() -> FastAPI:
-    """Application factory.
-
-    Using a factory (rather than a module-level `app`) keeps startup
-    configurable and makes the app easy to construct in tests.
-    """
+    """Build the app. A factory makes it easy to create fresh instances in tests."""
     settings = get_settings()
 
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
-        description="LumaJewel AI backend — foundation for the Luma Concierge agent.",
+        description="Backend for Luma Jewels AI: product catalog and the Luma Concierge agent.",
     )
 
     app.add_middleware(
@@ -42,8 +32,7 @@ def create_app() -> FastAPI:
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-        """Catch-all handler so unexpected errors return clean JSON instead
-        of leaking stack traces to the client."""
+        """Return a generic 500 response instead of exposing the stack trace."""
         logger.exception("Unhandled error while processing %s %s", request.method, request.url.path)
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

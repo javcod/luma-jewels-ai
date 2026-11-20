@@ -1,12 +1,4 @@
-# Render Blueprint for the LumaJewel AI backend.
-# https://render.com/docs/blueprint-spec
-#
-# Deploys backend/ only — the frontend is deployed separately to Vercel
-# (see .env.example at the repo root and backend/README.md, "Deployment").
-#
-# Env vars with `sync: false` have no value here on purpose: Render will
-# prompt for them once, in the dashboard, at Blueprint creation time. They
-# are never committed to this file or anywhere else in the repo.
+# Render Blueprint for the backend. Values marked sync: false are set in the dashboard.
 
 services:
   - type: web
@@ -20,17 +12,14 @@ services:
     envVars:
       - key: APP_ENV
         value: production
-      # Comma-separated list of allowed frontend origins (see
-      # backend/app/core/config.py). Set this to your deployed Vercel URL
-      # (and, if useful, a local dev origin too, comma-separated).
+      # Comma-separated allowed origins (the Vercel URL)
       - key: FRONTEND_ORIGIN
         sync: false
-      # "fake" (no key needed) or "gemini" (requires LLM_API_KEY below).
+      # "fake" or "gemini"
       - key: LLM_PROVIDER
         value: gemini
       - key: LLM_MODEL
         value: gemini-flash-latest
-      # The real Gemini API key. Set only here, in the Render dashboard —
-      # never in frontend files, Vercel env vars, or any tracked file.
+      # Set in the Render dashboard only
       - key: LLM_API_KEY
         sync: false

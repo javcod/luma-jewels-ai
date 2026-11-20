@@ -1,10 +1,4 @@
-"""Top-level API router.
-
-Aggregates all route modules under `app.api.routes` into a single router
-that `app.main` mounts on the FastAPI application. New route modules
-(products, concierge, etc.) should be added here in later phases rather
-than being wired directly into `main.py`.
-"""
+"""Combines all route modules into one router."""
 
 from fastapi import APIRouter
 
