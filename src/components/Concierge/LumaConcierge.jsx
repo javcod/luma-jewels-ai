@@ -131,9 +131,13 @@ const LumaConcierge = ({ isOpen, onClose, onProductClick }) => {
           activitySummary: buildActivitySummary(response),
         },
       ]);
-    } catch {
+    } catch (err) {
       // Show a friendly message, not the raw error
-      setError("I couldn't get a response just now. Please try again.");
+      setError(
+        err?.status === 429
+          ? "You've reached the chat limit for now. Please try again in a while."
+          : "I couldn't get a response just now. Please try again."
+      );
       setLastFailedMessage(trimmed);
     } finally {
       setIsLoading(false);

@@ -63,6 +63,20 @@ describe("LumaConcierge", () => {
     expect(await screen.findByText("Here's what I found.")).toBeInTheDocument();
   });
 
+  it("shows a chat-limit message when the backend returns 429", async () => {
+    sendConciergeMessage.mockRejectedValueOnce(Object.assign(new Error("Too Many Requests"), { status: 429 }));
+
+    const user = userEvent.setup();
+    render(<LumaConcierge isOpen onClose={() => {}} onProductClick={() => {}} />);
+
+    await user.type(screen.getByLabelText(/message luma concierge/i), "hello");
+    await user.keyboard("{Enter}");
+
+    expect(
+      await screen.findByText("You've reached the chat limit for now. Please try again in a while.")
+    ).toBeInTheDocument();
+  });
+
   it("does not call the backend for a blank/whitespace-only message", async () => {
     const user = userEvent.setup();
     render(<LumaConcierge isOpen onClose={() => {}} onProductClick={() => {}} />);

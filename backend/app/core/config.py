@@ -29,10 +29,19 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed CORS origins
     frontend_origin: str = "http://localhost:5173"
 
-    # "fake" (default, no API key needed) or "gemini"
+    # One provider ("fake", "gemini", "groq") or a fallback chain like "groq,gemini,fake"
     llm_provider: str = "fake"
+
+    # Gemini
     llm_model: str = ""
     llm_api_key: Optional[str] = None
+
+    # Groq
+    groq_model: str = ""
+    groq_api_key: Optional[str] = None
+
+    # Max chat requests per client IP per hour (0 disables the limit)
+    chat_rate_limit_per_hour: int = 20
 
     @property
     def cors_origins(self) -> list[str]:

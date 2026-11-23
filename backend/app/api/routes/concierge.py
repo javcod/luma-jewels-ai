@@ -1,11 +1,13 @@
 """Luma Concierge chat endpoint.
 
 The LLM provider is injected as a FastAPI dependency so tests can override it.
+Requests are rate limited per client IP.
 """
 
 from fastapi import APIRouter, Depends
 
 from app.agents.orchestrator import run_concierge
+from app.api.rate_limit import chat_rate_limit
 from app.llm.base import LLMProvider
 from app.llm.factory import get_llm_provider
 from app.schemas.concierge import ConciergeChatRequest, ConciergeChatResponse
@@ -13,7 +15,7 @@ from app.schemas.concierge import ConciergeChatRequest, ConciergeChatResponse
 router = APIRouter(prefix="/concierge", tags=["concierge"])
 
 
-@router.post("/chat", response_model=ConciergeChatResponse)
+@router.post("/chat", response_model=ConciergeChatResponse, dependencies=[Depends(chat_rate_limit)])
 def concierge_chat(
     request: ConciergeChatRequest,
     provider: LLMProvider = Depends(get_llm_provider),
