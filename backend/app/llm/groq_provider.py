@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 import time
 import uuid
 from typing import Any, Optional
@@ -18,6 +19,15 @@ DEFAULT_MODEL = "openai/gpt-oss-20b"
 _TIMEOUT_SECONDS = 20.0
 _MAX_ATTEMPTS = 2
 _RETRY_BACKOFF_SECONDS = 1.0
+
+# Small models often ignore formatting rules in the system prompt, so the
+# reminder is repeated next to the tool results, where the answer is written.
+_TOOL_RESULT_REMINDER = (
+    "Answer the user using this data in 2-4 short plain-text sentences. "
+    "Do not use tables, bold text, headings or a full product list; "
+    "the products are shown as cards under your reply."
+)
+_FALLBACK_REPLY = "Here are some pieces that match your request."
 
 
 class GroqProviderError(Exception):
@@ -69,7 +79,10 @@ def _to_openai_messages(messages: list[ChatMessage]) -> list[dict[str, str]]:
             # The orchestrator does not keep the assistant's tool-call turn, so
             # tool results are passed back as a user message.
             converted.append(
-                {"role": "user", "content": f"Result of tool `{message.name}`:\n{message.content}"}
+                {
+                    "role": "user",
+                    "content": f"Result of tool `{message.name}`:\n{message.content}\n\n{_TOOL_RESULT_REMINDER}",
+                }
             )
         else:
             converted.append({"role": message.role, "content": message.content})
@@ -110,4 +123,14 @@ def _from_openai_response(data: dict[str, Any]) -> LLMResponse:
             )
         return LLMResponse(tool_calls=tool_calls)
 
-    return LLMResponse(message=message.get("content") or "")
+    return LLMResponse(message=_to_plain_text(message.get("content") or ""))
+
+
+def _to_plain_text(text: str) -> str:
+    """Remove markdown the chat panel cannot render (tables, bold, headings)."""
+    lines = [re.sub(r"^\s*#{1,6}\s*", "", line) for line in text.splitlines() if not line.strip().startswith("|")]
+    cleaned = "\n".join(lines).replace("**", "").replace("__", "")
+    # A sentence that introduced a removed table ends with ":"
+    cleaned = re.sub(r":[ \t]*$", ".", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned or _FALLBACK_REPLY

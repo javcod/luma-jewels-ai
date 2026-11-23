@@ -87,7 +87,7 @@ Runs at `http://localhost:5173` and calls the backend at `VITE_API_BASE_URL` (de
 ## Testing
 
 ```bash
-cd backend && pytest      # 146 tests
+cd backend && pytest      # 148 tests
 npm test                  # 18 tests
 ```
 

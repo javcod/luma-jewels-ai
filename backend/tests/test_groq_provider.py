@@ -81,6 +81,7 @@ def test_tool_results_are_sent_as_user_messages():
     assert message["role"] == "user"
     assert "search_products" in message["content"]
     assert '{"count": 1}' in message["content"]
+    assert "plain-text" in message["content"]
 
 
 def test_parses_final_message():
@@ -155,3 +156,25 @@ def test_unexpected_response_shape_raises():
         _provider(lambda r: httpx.Response(200, json={"choices": []})).generate(
             [ChatMessage(role="user", content="x")], []
         )
+
+
+def test_markdown_tables_and_bold_are_removed_from_replies():
+    content = (
+        "Here are some pieces under $5,000:\n\n"
+        "| ID | Item | Price |\n|----|------|-------|\n| 1 | **Astraea Diamond Ring** | $2,450 |\n\n"
+        "## Why they fit\nThe **Astraea** ring is a classic choice."
+    )
+    response = _provider(lambda r: _ok({"content": content})).generate([ChatMessage(role="user", content="x")], [])
+
+    assert "|" not in response.message
+    assert "**" not in response.message
+    assert "#" not in response.message
+    assert "The Astraea ring is a classic choice." in response.message
+    assert response.message.startswith("Here are some pieces under $5,000.")
+
+
+def test_reply_that_is_only_a_table_gets_a_fallback_sentence():
+    content = "| ID | Item |\n|----|------|\n| 1 | Ring |"
+    response = _provider(lambda r: _ok({"content": content})).generate([ChatMessage(role="user", content="x")], [])
+
+    assert response.message == "Here are some pieces that match your request."
