@@ -2,29 +2,24 @@ import { motion } from "motion/react";
 
 const capabilities = [
   {
-    title: "Handpicked Collections",
-    detail: "Meticulously selected by artisans",
-    metric: "Atelier Certified",
-  },
-  {
     title: "Luma Concierge",
-    detail: "A real, tool-using AI assistant grounded in our live catalog",
-    metric: "Powered by Gemini",
+    detail: "A tool-using AI assistant that searches the live catalog for you",
+    metric: "Groq + Gemini",
   },
   {
-    title: "Secure Luxury Checkout",
-    detail: "Encrypted Maison-grade protection",
-    metric: "Global Assurance",
+    title: "Grounded Answers",
+    detail: "Every recommended piece comes from the catalog, never invented",
+    metric: "No Made-up Products",
   },
   {
-    title: "Crafted for Gifting",
-    detail: "Signature champagne-lined packaging",
-    metric: "Concierge Standard",
+    title: "Always Responds",
+    detail: "Falls back to rule-based matching when the AI is busy, and says so",
+    metric: "Fallback Chain",
   },
   {
-    title: "Ethically Sourced Maison",
-    detail: "Traceable brilliance from mine to finger",
-    metric: "RJC Member",
+    title: "Private Wishlist",
+    detail: "Saved in your browser, no account needed",
+    metric: "Stored Locally",
   },
 ];
 
@@ -39,14 +34,14 @@ const TrustSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 1 }}
           >
-            <span className="text-[11px] uppercase tracking-[0.6em] text-graphite/30 font-bold mb-8 block">Maison Protocol</span>
+            <span className="text-[11px] uppercase tracking-[0.6em] text-graphite/30 font-bold mb-8 block">How It Works</span>
             <h2 className="text-5xl md:text-7xl lg:text-8xl tracking-tighter leading-[0.9] mb-12">
               The <br />
               <span className="italic font-light text-champagne-800/80">Luma</span> <br />
               Standard
             </h2>
             <p className="text-[12px] uppercase tracking-[0.3em] text-graphite/40 leading-loose font-medium max-w-xs">
-              Every interaction with LUMAJewels AI is governed by our commitment to precision, heritage, and the future of luxury.
+              What happens behind the scenes when you shop with Luma Jewels AI.
             </p>
           </motion.div>
         </div>

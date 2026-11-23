@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Heart, ShoppingBag, ChevronRight, Info, Gem } from "lucide-react";
+import { Heart, Sparkles, Gem } from "lucide-react";
 import { Button } from "../ui/Button";
 import { GlassCard } from "../ui/GlassCard";
 import { cn } from "../../utils/cn";
@@ -41,8 +41,11 @@ const recommendations = [
   },
 ];
 
-const AIRecommendation = () => {
+const AIRecommendation = ({ products = [], onWishlist, isWishlisted, onAskConcierge }) => {
   const [activeItem, setActiveItem] = useState(recommendations[0]);
+  // The showcase ids match catalog ids; wishlisting needs the full catalog record
+  const catalogProduct = products.find((product) => product.id === activeItem.id);
+  const saved = catalogProduct ? isWishlisted?.(catalogProduct.id) : false;
 
   return (
     <section id="ai-match" className="py-32 px-6 md:px-12 bg-pearl">
@@ -147,18 +150,27 @@ const AIRecommendation = () => {
                   </GlassCard>
 
                   <div className="flex items-center gap-8 mt-6">
-                    <Button variant="primary" size="lg" className="flex-grow rounded-none shadow-2xl py-5">
-                      Secure this Piece <ShoppingBag size={14} className="ml-4" />
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="flex-grow rounded-none shadow-2xl py-5"
+                      onClick={onAskConcierge}
+                    >
+                      Ask Luma Concierge <Sparkles size={14} className="ml-4" />
                     </Button>
-                    <button className="w-16 h-16 border border-graphite/10 flex items-center justify-center hover:bg-champagne/10 transition-all duration-500 rounded-none group">
-                      <Heart size={24} strokeWidth={1} className="group-hover:scale-110 group-hover:fill-champagne transition-all" />
+                    <button
+                      type="button"
+                      onClick={() => catalogProduct && onWishlist?.(catalogProduct)}
+                      disabled={!catalogProduct}
+                      aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
+                      className="w-16 h-16 border border-graphite/10 flex items-center justify-center hover:bg-champagne/10 transition-all duration-500 rounded-none group disabled:opacity-40"
+                    >
+                      <Heart
+                        size={24}
+                        strokeWidth={1}
+                        className={cn("group-hover:scale-110 transition-all", saved && "fill-champagne")}
+                      />
                     </button>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 text-graphite/30 hover:text-graphite transition-all duration-500 cursor-pointer group mt-4 border-t border-black/5 pt-6">
-                    <Info size={14} strokeWidth={1.5} />
-                    <span className="text-[10px] uppercase tracking-[0.4em] font-bold">Request Virtual Presentation</span>
-                    <ChevronRight size={14} className="group-hover:translate-x-2 transition-transform duration-500" />
                   </div>
                 </div>
               </motion.div>

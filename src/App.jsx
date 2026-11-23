@@ -9,7 +9,6 @@ import { CollectionGrid } from "./components/sections/CollectionGrid";
 import { AIRecommendation } from "./components/sections/AIRecommendation";
 import { StyleQuiz } from "./components/sections/StyleQuiz";
 import { TrustSection } from "./components/sections/TrustSection";
-import { Testimonials } from "./components/sections/Testimonials";
 import { Footer } from "./components/sections/Footer";
 import { ProductCard } from "./components/ui/ProductCard";
 import { SmoothScroll } from "./components/ui/SmoothScroll";
@@ -93,6 +92,11 @@ function App() {
       if (next) setIsWishlistOpen(false);
       return next;
     });
+  };
+
+  const handleOpenConcierge = () => {
+    setIsWishlistOpen(false);
+    setIsConciergeOpen(true);
   };
 
   const handleOpenWishlist = () => {
@@ -179,13 +183,16 @@ function App() {
             </div>
           </section>
 
-          <AIRecommendation />
+          <AIRecommendation
+            products={products}
+            onWishlist={handleWishlist}
+            isWishlisted={wishlist.isWishlisted}
+            onAskConcierge={handleOpenConcierge}
+          />
 
           <StyleQuiz />
 
           <TrustSection />
-
-          <Testimonials />
         </main>
 
         <Footer />

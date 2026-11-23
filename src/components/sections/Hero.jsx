@@ -63,9 +63,9 @@ const Hero = ({ onFindMyStyle, onExploreCollection }) => {
             className="flex items-center gap-16 mt-6"
           >
             {[
-              { label: "Hand-crafted", value: "Atelier" },
+              { label: "Catalog", value: "Live" },
               { label: "Curated by", value: "Luma AI" },
-              { label: "Maison", value: "Paris" },
+              { label: "Assistant", value: "Tool-calling" },
             ].map((stat) => (
               <div key={stat.label} className="flex flex-col gap-2">
                 <span className="text-[9px] uppercase tracking-[0.4em] text-graphite/20 font-bold">{stat.label}</span>
