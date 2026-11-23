@@ -15,11 +15,17 @@ services:
       # Comma-separated allowed origins (the Vercel URL)
       - key: FRONTEND_ORIGIN
         sync: false
-      # "fake" or "gemini"
+      # Fallback chain: try Groq, then Gemini, then the rule-based provider
       - key: LLM_PROVIDER
-        value: gemini
+        value: groq,gemini,fake
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
       - key: LLM_MODEL
         value: gemini-flash-latest
-      # Set in the Render dashboard only
+      - key: CHAT_RATE_LIMIT_PER_HOUR
+        value: "20"
+      # API keys are set in the Render dashboard only
+      - key: GROQ_API_KEY
+        sync: false
       - key: LLM_API_KEY
         sync: false

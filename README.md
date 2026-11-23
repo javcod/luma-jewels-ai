@@ -29,7 +29,7 @@ A jewellery e-commerce app with an AI shopping assistant that only recommends pr
 ## Architecture
 
 ```
-React (Vercel) --> FastAPI (Render) --> Agent orchestrator --> LLM provider (Gemini or fake)
+React (Vercel) --> FastAPI (Render) --> Agent orchestrator --> LLM provider chain (Groq -> Gemini -> rule-based)
                                                |
                                                v
                                         Product tools --> Catalog service --> products.json
@@ -44,7 +44,9 @@ React (Vercel) --> FastAPI (Render) --> Agent orchestrator --> LLM provider (Gem
 
 **Key design decisions:**
 
-- **Provider abstraction.** The orchestrator depends on an `LLMProvider` interface. `GeminiProvider` is used in production; `FakeLLMProvider` is deterministic and used in tests and local development, so the full app runs without an API key.
+- **Provider abstraction.** The orchestrator depends on an `LLMProvider` interface with three implementations: `GroqProvider`, `GeminiProvider` and a deterministic `FakeLLMProvider` used in tests and local development, so the full app runs without an API key.
+- **Fallback chain.** In production, `LLM_PROVIDER=groq,gemini,fake` wraps the providers in a `FallbackProvider`. If one fails (for example, its free quota runs out) the next is tried, and a failed provider is skipped for 60 seconds. If only the rule-based provider is left, the reply says so. Adding this did not require changing the orchestrator.
+- **Rate limiting.** The chat endpoint allows 20 requests per IP per hour to protect the free API quotas.
 - **Plain Python loop instead of a framework.** With one decision point and five read-only tools, an explicit loop is easier to read and test than LangChain or LangGraph.
 - **Read-only tools.** `search_products`, `filter_products`, `get_product`, `compare_products` and `check_inventory` cannot modify anything, which limits what a prompt-injection attempt could do.
 - **Error handling.** Transient Gemini 5xx errors are retried (3 attempts, 1.5s backoff); 4xx and quota errors fail immediately. Clients never see raw exceptions.
@@ -55,7 +57,7 @@ React (Vercel) --> FastAPI (Render) --> Agent orchestrator --> LLM provider (Gem
 | -------- | ---------------------------------------------------- |
 | Frontend | React 19, Vite, Tailwind CSS v4, Motion              |
 | Backend  | Python 3.13, FastAPI, Pydantic v2                    |
-| AI       | Google Gemini (`google-genai` SDK)                   |
+| AI       | Groq (OpenAI-compatible API), Google Gemini          |
 | Testing  | Pytest + httpx, Vitest + React Testing Library       |
 | CI/CD    | GitHub Actions, Vercel (frontend), Render (backend)  |
 
@@ -71,7 +73,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-It uses the fake LLM provider by default. To use Gemini, copy `.env.example` to `.env` and set `LLM_PROVIDER=gemini` and `LLM_API_KEY`.
+It uses the fake LLM provider by default. To use a real model, copy `.env.example` to `.env`, set `LLM_PROVIDER` (for example `groq,gemini,fake`) and add `GROQ_API_KEY` and/or `LLM_API_KEY`.
 
 **Frontend**
 
@@ -85,14 +87,15 @@ Runs at `http://localhost:5173` and calls the backend at `VITE_API_BASE_URL` (de
 ## Testing
 
 ```bash
-cd backend && pytest      # 119 tests
-npm test                  # 17 tests
+cd backend && pytest      # 146 tests
+npm test                  # 18 tests
 ```
 
-The backend suite covers the API endpoints, catalog filters, both LLM providers (Gemini is mocked), the tools, the agent loop and security checks such as making sure the API key never appears in logs or responses. Tests always run against the fake provider, so they need no network access or API key. Both suites run in GitHub Actions on every push.
+The backend suite covers the API endpoints, catalog filters, all LLM providers and the fallback chain (external APIs are mocked), rate limiting, the tools, the agent loop and security checks such as making sure the API key never appears in logs or responses. Tests always run against the fake provider, so they need no network access or API key. Both suites run in GitHub Actions on every push.
 
 ## Known Limitations
 
+- Runs on free API tiers. When both Groq and Gemini quotas are used up, the assistant falls back to rule-based answers.
 - No conversation memory: each chat request is handled independently.
 - Inventory status is not tracked, so `check_inventory` reports "unknown" and the assistant says so.
 - The wishlist is stored per browser only; there are no accounts, cart or checkout.
