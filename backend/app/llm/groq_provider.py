@@ -1,5 +1,6 @@
 """Groq implementation of LLMProvider, using Groq's OpenAI-compatible chat API."""
 
+import copy
 import json
 import logging
 import re
@@ -67,7 +68,7 @@ class GroqProvider(LLMProvider):
                 # 429 means the free-tier quota is used up; the fallback chain moves on
                 raise GroqProviderError(f"Groq API error {response.status_code}: {response.text[:200]}")
 
-            return _from_openai_response(response.json())
+            return _from_openai_response(response.json(), tools)
 
         raise GroqProviderError("Groq request failed after retries")
 
@@ -90,18 +91,43 @@ def _to_openai_messages(messages: list[ChatMessage]) -> list[dict[str, str]]:
 
 
 def _to_openai_tool(tool: ToolDefinition) -> dict[str, Any]:
+    # Groq validates tool arguments on its side and rejects a call when the
+    # model writes a number as a string (e.g. "5000"). Accept both here and
+    # convert back in _coerce_arguments.
+    parameters = copy.deepcopy(tool.parameters)
+    for schema in parameters.get("properties", {}).values():
+        if schema.get("type") in ("number", "integer"):
+            schema["type"] = [schema["type"], "string"]
     return {
         "type": "function",
-        "function": {"name": tool.name, "description": tool.description, "parameters": tool.parameters},
+        "function": {"name": tool.name, "description": tool.description, "parameters": parameters},
     }
 
 
-def _from_openai_response(data: dict[str, Any]) -> LLMResponse:
+def _coerce_arguments(arguments: dict[str, Any], tool: Optional[ToolDefinition]) -> dict[str, Any]:
+    """Convert numeric strings to numbers where the tool schema expects a number."""
+    if tool is None:
+        return arguments
+    properties = tool.parameters.get("properties", {})
+    coerced = dict(arguments)
+    for key, value in arguments.items():
+        expected = properties.get(key, {}).get("type")
+        if expected in ("number", "integer") and isinstance(value, str):
+            try:
+                number = float(value.replace(",", "").replace("$", "").strip())
+            except ValueError:
+                continue
+            coerced[key] = int(number) if expected == "integer" else number
+    return coerced
+
+
+def _from_openai_response(data: dict[str, Any], tools: Optional[list[ToolDefinition]] = None) -> LLMResponse:
     try:
         message = data["choices"][0]["message"]
     except (KeyError, IndexError, TypeError) as exc:
         raise GroqProviderError("Groq returned an unexpected response shape") from exc
 
+    tools_by_name = {tool.name: tool for tool in tools or []}
     raw_calls = message.get("tool_calls") or []
     if raw_calls:
         tool_calls = []
@@ -118,7 +144,7 @@ def _from_openai_response(data: dict[str, Any]) -> LLMResponse:
                 ToolCall(
                     id=call.get("id") or f"call_{uuid.uuid4().hex[:8]}",
                     name=name,
-                    arguments=arguments if isinstance(arguments, dict) else {},
+                    arguments=_coerce_arguments(arguments, tools_by_name.get(name)) if isinstance(arguments, dict) else {},
                 )
             )
         return LLMResponse(tool_calls=tool_calls)

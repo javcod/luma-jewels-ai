@@ -12,7 +12,15 @@ from app.llm.groq_provider import API_URL, DEFAULT_MODEL, GroqProvider, GroqProv
 SEARCH_TOOL = ToolDefinition(
     name="search_products",
     description="Search the catalog",
-    parameters={"type": "object", "properties": {"category": {"type": "string"}}},
+    parameters={
+        "type": "object",
+        "properties": {"category": {"type": "string"}, "max_price": {"type": "number"}},
+    },
+)
+GET_TOOL = ToolDefinition(
+    name="get_product",
+    description="Get one product",
+    parameters={"type": "object", "properties": {"id": {"type": "integer"}}, "required": ["id"]},
 )
 
 
@@ -178,3 +186,43 @@ def test_reply_that_is_only_a_table_gets_a_fallback_sentence():
     response = _provider(lambda r: _ok({"content": content})).generate([ChatMessage(role="user", content="x")], [])
 
     assert response.message == "Here are some pieces that match your request."
+
+
+def test_numeric_parameters_also_accept_strings_in_the_schema_sent_to_groq():
+    captured = {}
+
+    def handler(request):
+        captured["body"] = json.loads(request.content)
+        return _ok({"content": "ok"})
+
+    _provider(handler).generate([ChatMessage(role="user", content="x")], [SEARCH_TOOL])
+    properties = captured["body"]["tools"][0]["function"]["parameters"]["properties"]
+
+    assert properties["max_price"]["type"] == ["number", "string"]
+    assert properties["category"]["type"] == "string"
+    assert SEARCH_TOOL.parameters["properties"]["max_price"]["type"] == "number"
+
+
+def _call(name, arguments):
+    return {"tool_calls": [{"id": "c1", "function": {"name": name, "arguments": json.dumps(arguments)}}]}
+
+
+def test_numeric_strings_are_converted_to_numbers():
+    response = _provider(lambda r: _ok(_call("search_products", {"max_price": "$5,000", "category": "Rings"}))).generate(
+        [ChatMessage(role="user", content="x")], [SEARCH_TOOL]
+    )
+    assert response.tool_calls[0].arguments == {"max_price": 5000.0, "category": "Rings"}
+
+
+def test_integer_strings_are_converted_to_ints():
+    response = _provider(lambda r: _ok(_call("get_product", {"id": "3"}))).generate(
+        [ChatMessage(role="user", content="x")], [GET_TOOL]
+    )
+    assert response.tool_calls[0].arguments == {"id": 3}
+
+
+def test_non_numeric_strings_are_left_unchanged():
+    response = _provider(lambda r: _ok(_call("search_products", {"max_price": "cheap"}))).generate(
+        [ChatMessage(role="user", content="x")], [SEARCH_TOOL]
+    )
+    assert response.tool_calls[0].arguments == {"max_price": "cheap"}
