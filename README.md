@@ -14,8 +14,8 @@ A jewellery e-commerce app with an AI shopping assistant that only recommends pr
 
 ## Screenshots
 
-| Home | Wishlist |
-| --- | --- |
+| Home | Concierge | Wishlist |
+| --- | --- | --- |
 | ![Home page](docs/screenshots/home.png) | ![Luma Concierge](docs/screenshots/concierge.png) | ![Wishlist panel](docs/screenshots/wishlist.png) |
 
 ## Features
